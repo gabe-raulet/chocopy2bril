@@ -66,20 +66,70 @@ class Lexer(object):
     def lex(cls, program):
         return list(cls(program))
 
-class Interpreter(object):
+class Parser(object):
 
-    def __init__(self, program):
-        self.program = program
+    def __init__(self, lexer):
+        self.lexer = lexer
+        self.token = self.lexer.next_token()
 
-    def evaluate(self):
-        return eval(self.program)
+    def error(self):
+        raise Exception("Syntax error")
 
-    #  def evaluate_actual(self):
-        #  tokens = Lexer.lex(self.program)
-        #  tree = Parser.parse(tokens)
-        #  result = self.compute(tree)
-        #  return result
+    def parse(self):
+        return self.expr()
 
-    @classmethod
-    def interpret(cls, program):
-        return cls(program).evaluate()
+    def match(self, name):
+        if list(self.token)[0] == name:
+            self.token = self.lexer.next_token()
+        else:
+            self.error()
+
+    def expr(self):
+        node = self.term()
+        while self.token and self.token.get("op") in {"+", "-"}:
+            op = self.token["op"]
+            self.match("op")
+            node = {"type": "binop", "op": op, "left": node, "right": self.term()}
+        return node
+
+    def term(self):
+        node = self.factor()
+        while self.token and self.token.get("op") in {"*", "/"}:
+            op = self.token["op"]
+            self.match("op")
+            node = {"type": "binop", "op": op, "left": node, "right": self.factor()}
+        return node
+
+    def factor(self):
+        if "lparen" in self.token:
+            self.match("lparen")
+            node = self.expr()
+            self.match("rparen")
+            return node
+        elif "num" in self.token:
+            node = {"type": "term", "item": self.token["num"]}
+            self.match("num")
+            return node
+        elif "id" in self.id:
+            node = {"type": "term", "item": self.token["id"]}
+            self.match("id")
+            return node
+        else:
+            self.error()
+
+def tree_eval(tree):
+    if tree["type"] == "term":
+        return tree["item"]
+    elif tree["type"] == "binop":
+        if tree["op"] == "*":
+            return tree_eval(tree["left"]) * tree_eval(tree["right"])
+        elif tree["op"] == "+":
+            return tree_eval(tree["left"]) + tree_eval(tree["right"])
+        else:
+            raise Exception("Parsing error")
+
+def interpret(program):
+    lexer = Lexer(program)
+    parser = Parser(lexer)
+    tree = parser.parse()
+    return tree_eval(tree)
