@@ -2,27 +2,38 @@ import sys
 import json
 from collections import namedtuple
 
-Token = namedtuple("Token", ["name", "value"])
+class Token(object):
 
-PLUS = "PLUS"
-MINUS = "MINUS"
-MUL = "MUL"
-DIV = "DIV"
-LPAREN = "LPAREN"
-RPAREN = "RPAREN"
-ASSIGN = "ASSIGN"
-ID = "ID"
-NUM = "NUM"
-NEWLINE = "NEWLINE"
-PRINT = "PRINT"
+    PLUS    = "PLUS"
+    MINUS   = "MINUS"
+    MUL     = "MUL"
+    DIV     = "DIV"
+    LPAREN  = "LPAREN"
+    RPAREN  = "RPAREN"
+    ASSIGN  = "ASSIGN"
+    ID      = "ID"
+    NUM     = "NUM"
+    NEWLINE = "NEWLINE"
+    PRINT   = "PRINT"
 
-char_tokens = {"+" : PLUS,
-               "-" : MINUS,
-               "*" : MUL,
-               "(" : LPAREN,
-               ")" : RPAREN,
-               "=" : ASSIGN,
-               "\n": NEWLINE}
+    char_tokens = {"+" : PLUS,
+                   "-" : MINUS,
+                   "*" : MUL,
+                   "/" : DIV,
+                   "(" : LPAREN,
+                   ")" : RPAREN,
+                   "=" : ASSIGN,
+                   "\n": NEWLINE}
+
+    def __init__(self, name, value):
+        self.name = name
+        self.value = value
+
+    def __repr__(self):
+        return f"Token({self.name}, {self.value})"
+
+    def to_dict(self):
+        return {"name" : self.name, "value" : self.value}
 
 class Lexer(object):
 
@@ -105,14 +116,14 @@ class Lexer(object):
         token = None
         if self.cur:
             if self.cur.isdigit():
-                token = Token(name=NUM, value=self.number())
+                token = Token(Token.NUM, self.number())
             elif self.cur_is_letter():
                 if self.attempt_match("print"):
-                    token = Token(name=PRINT, value="print")
+                    token = Token(Token.PRINT, "print")
                 else:
-                    token = Token(name=ID, value=self.identifier())
-            elif self.cur in char_tokens:
-                token = Token(name=char_tokens[self.cur], value=None)
+                    token = Token(Token.ID, self.identifier())
+            elif self.cur in Token.char_tokens:
+                token = Token(Token.char_tokens[self.cur], self.cur)
                 self.advance()
             else:
                 raise Exception("Lexing error")
@@ -124,11 +135,8 @@ class Lexer(object):
             yield token
             token = self.next_token()
 
-def token_to_dict(token):
-    return {token.name : token.value}
-
 if __name__ == "__main__":
     program = sys.stdin.read()
     lexer = Lexer(program)
-    tokens = [token_to_dict(token) for token in lexer]
+    tokens = [token.to_dict() for token in lexer]
     json.dump(tokens, sys.stdout, indent=4)
