@@ -1,0 +1,112 @@
+Module(
+    body=[
+        FunctionDef(
+            name='gcd1',
+            args=arguments(
+                posonlyargs=[],
+                args=[
+                    arg(arg='a'),
+                    arg(arg='b')],
+                kwonlyargs=[],
+                kw_defaults=[],
+                defaults=[]),
+            body=[
+                If(
+                    test=Compare(
+                        left=Name(id='b', ctx=Load()),
+                        ops=[
+                            Eq()],
+                        comparators=[
+                            Constant(value=0)]),
+                    body=[
+                        Return(
+                            value=Name(id='a', ctx=Load()))],
+                    orelse=[
+                        Return(
+                            value=Call(
+                                func=Name(id='gcd1', ctx=Load()),
+                                args=[
+                                    Name(id='b', ctx=Load()),
+                                    BinOp(
+                                        left=Name(id='a', ctx=Load()),
+                                        op=Mod(),
+                                        right=Name(id='b', ctx=Load()))],
+                                keywords=[]))])],
+            decorator_list=[]),
+        FunctionDef(
+            name='gcd2',
+            args=arguments(
+                posonlyargs=[],
+                args=[
+                    arg(arg='a'),
+                    arg(arg='b')],
+                kwonlyargs=[],
+                kw_defaults=[],
+                defaults=[]),
+            body=[
+                While(
+                    test=Compare(
+                        left=Name(id='b', ctx=Load()),
+                        ops=[
+                            NotEq()],
+                        comparators=[
+                            Constant(value=0)]),
+                    body=[
+                        Assign(
+                            targets=[
+                                Name(id='t', ctx=Store())],
+                            value=Name(id='a', ctx=Load())),
+                        Assign(
+                            targets=[
+                                Name(id='a', ctx=Store())],
+                            value=Name(id='b', ctx=Load())),
+                        Assign(
+                            targets=[
+                                Name(id='b', ctx=Store())],
+                            value=BinOp(
+                                left=Name(id='t', ctx=Load()),
+                                op=Mod(),
+                                right=Name(id='b', ctx=Load())))],
+                    orelse=[]),
+                Return(
+                    value=Name(id='a', ctx=Load()))],
+            decorator_list=[]),
+        Assign(
+            targets=[
+                Name(id='a', ctx=Store())],
+            value=Constant(value=25)),
+        Assign(
+            targets=[
+                Name(id='b', ctx=Store())],
+            value=Constant(value=10)),
+        Assign(
+            targets=[
+                Name(id='gcd_ab1', ctx=Store())],
+            value=Call(
+                func=Name(id='gcd1', ctx=Load()),
+                args=[
+                    Name(id='a', ctx=Load()),
+                    Name(id='b', ctx=Load())],
+                keywords=[])),
+        Assign(
+            targets=[
+                Name(id='gcd_ab2', ctx=Store())],
+            value=Call(
+                func=Name(id='gcd2', ctx=Load()),
+                args=[
+                    Name(id='a', ctx=Load()),
+                    Name(id='b', ctx=Load())],
+                keywords=[])),
+        Expr(
+            value=Call(
+                func=Name(id='print', ctx=Load()),
+                args=[
+                    Name(id='gcd_ab1', ctx=Load())],
+                keywords=[])),
+        Expr(
+            value=Call(
+                func=Name(id='print', ctx=Load()),
+                args=[
+                    Name(id='gcd_ab2', ctx=Load())],
+                keywords=[]))],
+    type_ignores=[])

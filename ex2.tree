@@ -1,0 +1,18 @@
+Module(
+    body=[
+        Assign(
+            targets=[
+                Name(id='var1', ctx=Store())],
+            value=Constant(value=12)),
+        Assign(
+            targets=[
+                Name(id='var2', ctx=Store())],
+            value=Constant(value=23)),
+        Assign(
+            targets=[
+                Name(id='var3', ctx=Store())],
+            value=BinOp(
+                left=Name(id='var1', ctx=Load()),
+                op=Add(),
+                right=Name(id='var2', ctx=Load())))],
+    type_ignores=[])
