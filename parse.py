@@ -179,10 +179,3 @@ if __name__ == "__main__":
     parse_tree = Parser(tokens).parse()
     parse_tree_json = parse_tree.to_dict()
     json.dump(parse_tree_json, sys.stdout, indent=4)
-
-    #  program = "var2 + var3\n"
-    #  tokens = list(Lexer(program))
-    #  parser = Parser(tokens)
-    #  tree = parser.parse()
-    #  print(tree)
-
