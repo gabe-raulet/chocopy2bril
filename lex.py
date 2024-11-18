@@ -35,6 +35,10 @@ class Token(object):
     def to_dict(self):
         return {"name" : self.name, "value" : self.value}
 
+    @classmethod
+    def from_dict(cls, dict_token):
+        return cls(dict_token["name"], dict_token["value"])
+
 class Lexer(object):
 
     def __init__(self, program):
@@ -134,6 +138,10 @@ class Lexer(object):
         while token:
             yield token
             token = self.next_token()
+
+    @classmethod
+    def read_dict_tokens(cls, dict_tokens):
+        return [Token.from_dict(dict_token) for dict_token in dict_tokens]
 
 if __name__ == "__main__":
     program = sys.stdin.read()
