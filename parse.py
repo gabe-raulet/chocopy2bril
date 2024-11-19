@@ -80,7 +80,7 @@ class AstBinOp(Ast):
         binop_dict["op"] = self.op
         binop_dict["left"] = self.left.to_dict()
         binop_dict["right"] = self.right.to_dict()
-
+        return binop_dict
 
     def __repr__(self):
         return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
