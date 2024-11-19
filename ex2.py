@@ -6,5 +6,5 @@ c = 30 - d
 e = 1 - c
 a = 3*e  + 51
 b = a * b + c - d + (d * (3 - a - b + 100))
-print(a)
-print(b)
+print a
+print b

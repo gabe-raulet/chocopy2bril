@@ -1,4 +1,5 @@
 import sys
+import json
 
 class Token(object):
 
@@ -288,6 +289,46 @@ class Parser(object):
         else:
             self.error()
 
+class Instruction(object):
+    pass
+
+class AssignInstr(Instruction):
+
+    def __init__(self, dest, token):
+        self.dest = dest
+        self.token = token
+
+    def get_instr(self):
+        instr = {"dest" : self.dest, "type" : "int"}
+        if self.token.name == Token.NUM:
+            instr["op"] = "const"
+            instr["value"] = self.token.value
+        elif self.token.name == Token.ID:
+            instr["op"] = "id"
+            instr["args"] = [self.token.value]
+        else:
+            raise Exception(f"Syntax error: {self.token} is not a terminal")
+        return instr
+
+class ValueInstr(Instruction):
+
+    def __init__(self, op, dest, lhs, rhs):
+        self.op = op.lower()
+        self.dest = dest
+        self.lhs = lhs
+        self.rhs = rhs
+
+    def get_instr(self):
+        return {"dest" : self.dest, "op" : self.op, "type" : "int", "args" : [self.lhs, self.rhs]}
+
+class PrintInstr(Instruction):
+
+    def __init__(self, arg):
+        self.arg = arg
+
+    def get_instr(self):
+        return {"op" : "print", "args" : [self.arg]}
+
 class CodeGenerator(object):
 
     def __init__(self, root):
@@ -304,36 +345,40 @@ class CodeGenerator(object):
     def traverse(self, node):
         if isinstance(node, AstTerm):
             reg = self.fresh_reg()
-            self.instrs.append(f"{reg} := {node.token.value}")
+            self.instrs.append(AssignInstr(reg, node.token))
             self.stack.append(reg)
+        elif isinstance(node, AstAssign):
+            self.traverse(node.expr)
+            rhs = self.stack.pop()
+            self.instrs.append(AssignInstr(node.target.value, Token(Token.ID, rhs)))
         elif isinstance(node, AstBinOp):
             self.traverse(node.left)
             self.traverse(node.right)
             rhs = self.stack.pop()
             lhs = self.stack.pop()
             reg = self.fresh_reg()
-            self.instrs.append(f"{reg} := {lhs} {Token.token_chars[node.op]} {rhs}")
+            self.instrs.append(ValueInstr(node.op, reg, lhs, rhs))
             self.stack.append(reg)
         elif isinstance(node, AstPrint):
             self.traverse(node.expr)
             reg = self.stack.pop()
-            self.instrs.append(f"print {reg}")
+            self.instrs.append(PrintInstr(reg))
 
     def generate(self):
         self.traverse(self.root)
         for instr in self.instrs:
             yield instr
 
-#  program = "print 5 + 4 * 3 - 7 - 4 + (3 - 9)\n"
-program = "print 2 * ((1 + 1 + 1) / 3)\n"
-#  P1 = "5 + 4 * 3\n"
-#  P2 = "(5 + 4) * 3\n"
-#  P3 = "5 - 3\n"
-#  P4 = "(5 / 3) * (4 / 3) + 1\n"
-
-tokens = list(Lexer(program))
-parse_tree = Parser(tokens).parse()
-node = parse_tree.stmts[0]
-gen = CodeGenerator(node)
-for instr in gen.generate():
-    print(instr)
+if __name__ == "__main__":
+    progtxt = sys.stdin.read()
+    tokens = list(Lexer(progtxt))
+    tree = Parser(tokens).parse()
+    instrs = []
+    for stmt in tree.stmts:
+        loc = [instr.get_instr() for instr in CodeGenerator(stmt).generate()]
+        instrs += loc
+    func = {}
+    func["instrs"] = instrs
+    func["name"] = "main"
+    prog = {"functions" : [func]}
+    json.dump(prog, sys.stdout, indent=4)
