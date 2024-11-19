@@ -2,8 +2,8 @@ import sys
 
 class Token(object):
 
-    PLUS    = "PLUS"
-    MINUS   = "MINUS"
+    ADD     = "ADD"
+    SUB     = "SUB"
     MUL     = "MUL"
     DIV     = "DIV"
     LPAREN  = "LPAREN"
@@ -14,8 +14,8 @@ class Token(object):
     NEWLINE = "NEWLINE"
     PRINT   = "PRINT"
 
-    char_tokens = {"+" : PLUS,
-                   "-" : MINUS,
+    char_tokens = {"+" : ADD,
+                   "-" : SUB,
                    "*" : MUL,
                    "/" : DIV,
                    "(" : LPAREN,
@@ -23,8 +23,8 @@ class Token(object):
                    "=" : ASSIGN,
                    "\n": NEWLINE}
 
-    token_chars = {PLUS    : "+",
-                   MINUS   : "-",
+    token_chars = {ADD     : "+",
+                   SUB     : "-",
                    MUL     : "*",
                    DIV     : "/",
                    LPAREN  : "(",
@@ -257,7 +257,7 @@ class Parser(object):
 
     def expr(self):
         node = self.term()
-        while self.token and self.token.name in {Token.PLUS, Token.MINUS}:
+        while self.token and self.token.name in {Token.ADD, Token.SUB}:
             op = self.token.name
             self.match(op)
             node = AstBinOp(op=op, left=node, right=self.term())

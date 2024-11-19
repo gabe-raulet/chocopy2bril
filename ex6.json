@@ -1,0 +1,109 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "_t0",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "dest": "_t1",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "dest": "_t2",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "args": [
+            "_t1",
+            "_t2"
+          ],
+          "dest": "_t3",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "_t0",
+            "_t3"
+          ],
+          "dest": "_t4",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "args": [
+            "_t4"
+          ],
+          "dest": "var",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "var"
+          ],
+          "op": "print"
+        },
+        {
+          "dest": "_t0",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "dest": "_t1",
+          "op": "const",
+          "type": "int",
+          "value": 4
+        },
+        {
+          "args": [
+            "_t0",
+            "_t1"
+          ],
+          "dest": "_t2",
+          "op": "add",
+          "type": "int"
+        },
+        {
+          "dest": "_t3",
+          "op": "const",
+          "type": "int",
+          "value": 3
+        },
+        {
+          "args": [
+            "_t2",
+            "_t3"
+          ],
+          "dest": "_t4",
+          "op": "mul",
+          "type": "int"
+        },
+        {
+          "args": [
+            "_t4"
+          ],
+          "dest": "var",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "var"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
