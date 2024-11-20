@@ -1,4 +1,5 @@
 import sys
+import json
 
 class Token(object):
 
@@ -49,6 +50,10 @@ class Token(object):
 
     def as_dict(self):
         return {"name" : self.name, "value" : self.value}
+
+    @classmethod
+    def from_dict(cls, token):
+        return cls(token.name, token.value)
 
 class Lexer(object):
 
@@ -182,8 +187,4 @@ class Lexer(object):
             token = self.next_token()
 
 if __name__ == "__main__":
-    tokens = [token.as_dict() for token in Lexer(sys.stdin.read())]
-    for token in tokens:
-        print(token)
-    #  for token in lexer:
-        #  print(token)
+    json.dump([token.as_dict() for token in Lexer(sys.stdin.read())], sys.stdout, indent=4)
