@@ -13,26 +13,45 @@ class AstBody(Ast):
     def append_stmt(self, stmt):
         self.stmts.append(stmt)
 
+    def __iter__(self):
+        for stmt in self.stmts:
+            yield stmt
+
+    def to_dict(self):
+        return {"ast" : "body", "stmts" : [stmt.to_dict() for stmt in self]}
+
 class AstAssign(Ast):
 
     def __init__(self, target, expr):
         self.target = target
         self.expr = expr
 
+    def to_dict(self):
+        return {"ast" : "assign", "target" : self.target, "expr" : self.expr.to_dict()}
+
 class AstPrint(Ast):
 
     def __init__(self, expr):
         self.expr = expr
+
+    def to_dict(self):
+        return {"ast" : "print", "expr" : self.expr.to_dict()}
 
 class AstConstant(Ast):
 
     def __init__(self, value):
         self.value = value
 
+    def to_dict(self):
+        return {"ast" : "constant", "value" : self.value}
+
 class AstName(Ast):
 
     def __init__(self, name):
         self.name = name
+
+    def to_dict(self):
+        return {"ast" : "name", "name" : self.name}
 
 class AstBinaryOp(Ast):
 
@@ -40,6 +59,9 @@ class AstBinaryOp(Ast):
         self.op = op
         self.left = left
         self.right = right
+
+    def to_dict(self):
+        return {"ast" : "binaryop", "op" : self.op, "left" : self.left.to_dict(), "right" : self.right.to_dict()}
 
 class Parser(object):
 
@@ -141,7 +163,11 @@ if __name__ == "__main__":
     token_dicts = json.load(sys.stdin)
     tokens = [Token.from_dict(token) for token in token_dicts]
     parser = Parser(tokens)
-    body = parser.parse()
+    body = parser.parse().to_dict()
+    json.dump(body, sys.stdout, indent=4)
+
+    #  for stmt in body:
+        #  print(stmt.)
 
 #  program = "".join(list(open("ex5.py", "r")))
 #  tokens = list(Lexer(program))

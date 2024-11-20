@@ -53,7 +53,7 @@ class Token(object):
 
     @classmethod
     def from_dict(cls, token):
-        return cls(token.name, token.value)
+        return cls(token["name"], token["value"])
 
 class Lexer(object):
 
