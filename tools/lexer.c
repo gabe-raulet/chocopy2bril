@@ -7,12 +7,16 @@
 int main(int argc, char *argv[])
 {
     stream_t stream;
-    stream_open("ex1.py", &stream);
+    stream_open("stdin", &stream);
 
     int c;
 
     while ((c = stream_get_char(&stream)) >= 0)
-        printf("'%c'\n", c);
+    {
+        if      (c == '\n') printf("'\\n'\n");
+        else if (c == '\t') printf("'\\t'\n");
+        else                 printf("'%c'\n", c);
+    }
 
     stream_close(&stream);
     return 0;
