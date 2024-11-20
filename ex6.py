@@ -1,4 +1,4 @@
 var = 5 + 4 * 3
-print var
+print(var)
 var = (5 + 4) * 3
-print var
+print(var)

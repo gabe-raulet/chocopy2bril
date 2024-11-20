@@ -165,11 +165,3 @@ if __name__ == "__main__":
     parser = Parser(tokens)
     body = parser.parse().to_dict()
     json.dump(body, sys.stdout, indent=4)
-
-    #  for stmt in body:
-        #  print(stmt.)
-
-#  program = "".join(list(open("ex5.py", "r")))
-#  tokens = list(Lexer(program))
-#  parser = Parser(tokens)
-#  body = parser.parse()
