@@ -6,6 +6,7 @@ class Token(object):
     SUB     = "SUB"     # '-'
     MUL     = "MUL"     # '*'
     DIV     = "DIV"     # '/'
+    MOD     = "MOD"     # '%'
     LPAREN  = "LPAREN"  # '('
     RPAREN  = "RPAREN"  # ')'
     ASSIGN  = "ASSIGN"  # '='
@@ -92,7 +93,7 @@ class Lexer(object):
         return self.cur_is_digit() or self.cur_is_letter()
 
     def cur_is_term_token(self):
-        return self.cur in ("=","!", "<", ">", "+", "-", "*", "/", "(", ")", ":", "\n")
+        return self.cur in ("=","!", "<", ">", "+", "-", "*", "/", "(", ")", ":", "%", "\n")
 
     def skip_whitespace(self):
         while self.cur and self.cur_is_whitespace():
@@ -108,13 +109,14 @@ class Lexer(object):
     def number(self):
         """
         A number token is a string of digits that does NOT begin
-        with a zero '0'.
+        with a zero '0', unless it is supposed to be zero.
         """
-        if self.cur == "0": self.error()
         digits = []
         while self.cur and self.cur_is_digit():
             digits.append(self.cur)
             self.advance()
+        if digits[0] == "0" and len(digits) > 1:
+            self.error()
         return int("".join(digits))
 
     def identifier(self):
@@ -163,6 +165,7 @@ class Lexer(object):
                 elif self.attempt_match("-"):  token = Token(Token.SUB, "-")
                 elif self.attempt_match("*"):  token = Token(Token.MUL, "*")
                 elif self.attempt_match("/"):  token = Token(Token.DIV, "/")
+                elif self.attempt_match("%"):  token = Token(Token.MOD, "%")
                 elif self.attempt_match("("):  token = Token(Token.LPAREN, "(")
                 elif self.attempt_match(")"):  token = Token(Token.RPAREN, ")")
                 elif self.attempt_match(":"):  token = Token(Token.COLON, ":")
