@@ -17,7 +17,7 @@ def is_prime(x: int) -> bool:
     while div < x:
         if x % div == 0:
             return False
-        div += 1
+        div = div + 1
     return True
 
 # input parameter
@@ -29,4 +29,4 @@ i: int = 1 # Run [1,n]
 
 while i <= n:
     print(get_prime(i))
-    i+=1
+    i = i + 1
