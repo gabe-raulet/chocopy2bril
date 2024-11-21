@@ -26,3 +26,13 @@ while a != 0:
     a = t % b
 
 print(b)
+
+if b < c:
+    if a <= d:
+        print(a)
+    elif a >= d:
+        print(b)
+elif b > c:
+    print(c)
+else:
+    print(a)
