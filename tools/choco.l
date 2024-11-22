@@ -18,7 +18,7 @@ BLANK   ^[ \t]*({COMMENT}|\n)
 {LWSPACE} printf("LWSPACE\t%d\n", (int)yyleng);
 {LTSPACE} printf("LTSPACE\t%d\n", (int)yyleng);
 {SPACE} ;
-{COMMENT} ;
+{COMMENT} printf("NEWLINE\n");
 {STRING} printf("error: do not currently accept string literals: %s\n", yytext);
 {KEYWORD} printf("KEYWORD\t%s\n", yytext);
 {ID} printf("ID\t%s\n", yytext);
