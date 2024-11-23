@@ -1,5 +1,6 @@
 import sys
 import json
+import re
 
 class Token(object):
 
@@ -29,15 +30,44 @@ class Token(object):
     def from_dict(cls, token):
         return cls(token["name"], token["value"])
 
-def logical_lines(f):
-    for line in f.readlines():
-        index = line.find("#")
-        if index != -1: line = line[:index]
-        line = line.rstrip()
-        if not line: continue
-        yield line
+#  def logical_lines(fh):
+    #  for line in fh.readlines():
+        #  index = line.find("#")
+        #  if index != -1: line = line[:index]
+        #  line = line.rstrip()
+        #  if not line: continue
+        #  yield line
 
-f = open("simple.py")
-l = logical_lines(f)
-for line in logical_lines(f):
-    print(f"line='{line}', size={len(line)}")
+stack = [0]
+lines = list(open("simple.py"))
+
+blank = re.compile(r"^[ \t]*(#.*\n|\n)")
+comment = re.compile(r"#.*\n")
+spaces = re.compile(r"^[ \t]+")
+identifier = re.compile(r"[a-zA-Z_][a-zA-Z_0-9]*")
+keyword = re.compile()
+
+def tokenize_line(line):
+    for ident in identifier.findall(line):
+        yield ident
+
+for line in lines:
+    if not blank.match(line):
+        line = comment.split(line)[0].rstrip()
+        lspace = spaces.match(line)
+        cnt = 0 if not lspace else lspace.end()
+        line = line[cnt:]
+        for token in tokenize_line(line):
+            print(token)
+
+#  for line in lines:
+    #  if not blank.match(line):
+        #  line = comment.split(line)[0].rstrip()
+        #  lspace = spaces.match(line)
+        #  cnt = 0 if not lspace else lspace.end()
+        #  if cnt > stack[-1]:
+            #  print("INDENT")
+            #  stack.append(cnt)
+        #  while cnt < stack[-1]:
+            #  print("DEDENT")
+            #  cnt = stack.pop()
