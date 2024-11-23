@@ -1,3 +1,5 @@
+var_name: int = 12333333    # test
+var_name2: int = 1233333      
 # this number is a
 a: int = 1523
 
