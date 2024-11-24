@@ -75,7 +75,7 @@ class Parser(object):
 
     def program(self):
         var_defs = self.var_defs()
-        #  stmts = self.stmts()
+        stmts = self.stmts()
         stmts = []
         return AstProgram(var_defs, stmts)
 
@@ -98,6 +98,62 @@ class Parser(object):
             self.error("variable definition literal types don't match")
         self.match(Token("NEWLINE"))
         return AstVarDef(id_token.value, type_token.value, lit_token.value)
+
+    def stmts(self):
+        l = []
+        while self.token: l.append(self.stmt())
+        return l
+
+    def stmt(self):
+        node = None
+        if self.token == Token("PRINT"):
+            self.match(Token("PRINT"))
+            self.match(Token("DELIM", "("))
+            node = AstPrint(self.expr())
+            self.match(Token("DELIM", ")"))
+        elif self.token == Token("ID") and self.peek() == Token("DELIM", "="):
+            target_token = self.match(Token("ID"))
+            self.match(Token("DELIM", "="))
+            expr = self.expr()
+            node = AstAssign(target_token.value, expr)
+        else:
+            node = self.expr()
+
+        self.match(Token("NEWLINE"))
+        return node
+
+    def expr(self):
+        node = self.term()
+        while self.token and self.token.value in {"+", "-"}:
+            op = self.token.value
+            self.match(Token("BINOP", op))
+            node = AstBinOp(op=op, left=node, right=self.term())
+        return node
+
+    def term(self):
+        node = self.factor()
+        while self.token and self.token.value in {"+", "//", "%"}:
+            op = self.token.value
+            self.match(Token("BINOP", op))
+            node = AstBinOp(op=op, left=node, right=self.factor())
+        return node
+
+    def factor(self):
+        if self.token == Token("DELIM", "("):
+            self.match(Token("DELIM", "("))
+            node = self.expr()
+            self.match(Token("DELIM", ")"))
+            return node
+        elif self.token == Token("NUM"):
+            node = self.token.value
+            self.match(Token("NUM"))
+            return node
+        elif self.token == Token("ID"):
+            node = self.token.value
+            self.match(Token("ID"))
+            return node
+        else:
+            self.error()
 
 if __name__ == "__main__":
     #  tokens = [Token.from_dict(token) for token in json.load(sys.stdin)]
