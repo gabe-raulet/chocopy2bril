@@ -40,7 +40,7 @@ class Token(object):
 
     TOKENS = [BINOP, DELIM, TYPE, KEYWORD, PRINT, BOOL, ID, NUM]
 
-    def __init__(self, name, value):
+    def __init__(self, name, value=None):
         self.name = name
         self.value = value
 
@@ -50,6 +50,11 @@ class Token(object):
 
     def to_dict(self):
         return {"name" : self.name, "value" : self.value}
+
+    def __eq__(self, other):
+        result = (self.name == other.name)
+        if other.value: result &= (self.value == other.value)
+        return result
 
     @classmethod
     def from_dict(cls, token_dict):
