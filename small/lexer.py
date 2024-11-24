@@ -51,33 +51,31 @@ class Token(object):
 
     TOKENS = [BINOP, DELIM, TYPE, KEYWORD, PRINT, BOOL, ID, NUM]
 
-    def __init__(self, name, value):
+    def __init__(self, name, value, lexeme):
         self.name = name
         self.value = value
+        self.lexeme = lexeme
 
     def __repr__(self):
-        return f"Token(name={self.name}, value={self.value})"
+        return f"Token(name={self.name}, value={self.value}, lexeme={self.lexeme})"
 
     def to_dict(self):
-        return {"name" : self.name, "value" : self.value}
+        return {"name" : self.name, "value" : self.value, "lexeme" : self.lexeme}
 
     @classmethod
     def from_dict(self, token_dict):
-        return cls(token_dict["name"], token_dict["value"])
+        return cls(token_dict["name"], token_dict["value"], token_dict["lexeme"])
 
     @classmethod
     def match(cls, text):
         if not text: return None
-        if text[0] == "\n": return cls("NEWLINE", None), text[1:]
+        if text[0] == "\n": return cls("NEWLINE", None, r"\n"), text[1:]
         text = text.lstrip()
         for token in cls.TOKENS:
             result = token.match(text)
             if result:
-                lexname, value, remain = result
-                if lexname:
-                    return cls(token.name, lexname), remain
-                else:
-                    return cls(token.name, value), remain
+                lexname, lexeme, remain = result
+                return cls(token.name, lexname, lexeme), remain
         return None
 
 class Lexer(object):
@@ -102,7 +100,6 @@ class Lexer(object):
         t = Token.match(self.text)
         if t: self.peek, self.text = t
         else: self.peek = None
-        self.text = self.text.lstrip()
         return self.token
 
     def peek_token(self):
@@ -112,6 +109,7 @@ class Lexer(object):
         while self.token:
             yield self.token
             self.next_token()
+        yield Token("NEWLINE", None, r"\n")
 
 if __name__ == "__main__":
     text = sys.stdin.read()
