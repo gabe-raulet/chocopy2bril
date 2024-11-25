@@ -40,7 +40,7 @@ class Token(object):
 
     ADD = TokenPattern.exact("ADD", "+")
     SUB = TokenPattern.exact("SUB", "-")
-    MUL = TokenPattern.exact("MUL", "-")
+    MUL = TokenPattern.exact("MUL", "*")
     DIV = TokenPattern.exact("DIV", "//")
     MOD = TokenPattern.exact("MOD", "%")
 
@@ -49,20 +49,17 @@ class Token(object):
     COLON  = TokenPattern.exact("COLON", ":")
     ASSIGN = TokenPattern.exact("ASSIGN", "=")
 
-    PRINT = TokenPattern.exact("PRINT", "print")
-
-    TYPE = TokenPattern.regexp("TYPE", r"int|bool|str")
-    ID   = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
-    NUM  = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
+    KEYWORD = TokenPattern.regexp("KEYWORD", r"if|elif|else|while|for|print")
+    TYPE    = TokenPattern.regexp("TYPE", r"int|bool|str")
+    ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
+    NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
 
     BINOP_GROUP = [ADD, SUB, MUL, DIV, MOD]
     DELIM_GROUP = [LPAREN, RPAREN, COLON, ASSIGN]
-    KEYWORD_GROUP = [PRINT]
-    EXACT_GROUP = [BINOP_GROUP, DELIM_GROUP, KEYWORD_GROUP]
+    EXACT_GROUP = [BINOP_GROUP, DELIM_GROUP]
 
     BINOP = TokenPattern.group("BINOP", BINOP_GROUP)
     DELIM = TokenPattern.group("DELIM", DELIM_GROUP)
-    KEYWORD = TokenPattern.group("KEYWORD", KEYWORD_GROUP)
 
     def __init__(self, name, value=None):
         self.name = name
@@ -99,10 +96,8 @@ class Token(object):
                     return Token(delim.name, value), text
 
         if cls.KEYWORD.match(text):
-            for keyword in cls.KEYWORD_GROUP:
-                if keyword.match(text):
-                    value, text = keyword.lex_and_split(text)
-                    return Token(keyword.name, value), text
+            value, text = cls.KEYWORD.lex_and_split(text)
+            return Token(cls.KEYWORD.name, value), text
 
         if cls.TYPE.match(text):
             value, text = cls.TYPE.lex_and_split(text)
@@ -134,6 +129,3 @@ def lex_text(text):
 
 if __name__ == "__main__":
     json.dump([token.to_dict() for token in lex_text(sys.stdin.read())], sys.stdout, indent=4)
-
-    #  for token in lex_text(sys.stdin.read()):
-        #  print(token)
