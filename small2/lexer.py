@@ -4,16 +4,30 @@ import json
 
 class TokenPattern(object):
 
-    def __init__(self, name, pattern, process=None):
+    def __init__(self, name, pattern, process):
         self.name = name
         self.pattern = pattern
         self.process = process
 
-    @classmethod
-    def lexemes(cls, name, lexemes, process=None):
-        return cls(name, "|".join(map(re.escape, lexemes)), process)
+    def __repr__(self):
+        return f"TokenPattern({self.name}, '{self.pattern}')"
 
-    def match_text(self, text):
+    @classmethod
+    def exact(cls, name, lexeme, process=None):
+        return cls(name, re.escape(lexeme), process)
+
+    @classmethod
+    def regexp(cls, name, pattern, process=None):
+        return cls(name, pattern, process)
+
+    @classmethod
+    def group(cls, name, token_patterns, process=None):
+        return cls(name, "|".join(t.pattern for t in token_patterns), process)
+
+    def match(self, text):
+        return re.match(self.pattern, text) is not None
+
+    def lex_and_split(self, text):
         m_obj = re.match(self.pattern, text)
         if m_obj:
             value = m_obj.group()
@@ -22,40 +36,47 @@ class TokenPattern(object):
         else:
             return None
 
-    def match_token(self, token):
-        return re.match(self.pattern, token.lexeme()) is not None
-
 class Token(object):
 
-    BINOP = TokenPattern.lexemes("BINOP", ["+", "-", "*", "//", "%"])
-    DELIM = TokenPattern.lexemes("DELIM", ["(", ")", ":", "="])
-    TYPE  = TokenPattern.lexemes("TYPE", ["int"])
-    KEYWORD = TokenPattern.lexemes("KEYWORD", ["print"])
-    ID = TokenPattern("ID", r"[a-zA-Z][a-zA-Z_0-9]*")
-    NUM = TokenPattern("NUM", r"[0-9]+", process=lambda x: int(x))
+    ADD = TokenPattern.exact("ADD", "+")
+    SUB = TokenPattern.exact("SUB", "-")
+    MUL = TokenPattern.exact("MUL", "-")
+    DIV = TokenPattern.exact("DIV", "//")
+    MOD = TokenPattern.exact("MOD", "%")
 
-    SYMBOLS = [BINOP, DELIM, TYPE, KEYWORD]
-    PATTERNS = [ID, NUM]
+    LPAREN = TokenPattern.exact("LPAREN", "(")
+    RPAREN = TokenPattern.exact("RPAREN", ")")
+    COLON  = TokenPattern.exact("COLON", ":")
+    ASSIGN = TokenPattern.exact("ASSIGN", "=")
+
+    PRINT = TokenPattern.exact("PRINT", "print")
+
+    TYPE = TokenPattern.regexp("TYPE", r"int|bool|str")
+    ID   = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
+    NUM  = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
+
+    BINOP_GROUP = [ADD, SUB, MUL, DIV, MOD]
+    DELIM_GROUP = [LPAREN, RPAREN, COLON, ASSIGN]
+    KEYWORD_GROUP = [PRINT]
+    EXACT_GROUP = [BINOP_GROUP, DELIM_GROUP, KEYWORD_GROUP]
+
+    BINOP = TokenPattern.group("BINOP", BINOP_GROUP)
+    DELIM = TokenPattern.group("DELIM", DELIM_GROUP)
+    KEYWORD = TokenPattern.group("KEYWORD", KEYWORD_GROUP)
 
     def __init__(self, name, value=None):
         self.name = name
         self.value = value
 
-    def lexeme(self):
-        return self.value if self.value else self.name
-
     def __repr__(self):
-        if self.value: return f"Token({self.name}, '{self.value}')"
-        else: return f"Token('{self.name}')"
+        return f"Token({self.name}, '{self.value}')"
 
     def to_dict(self):
-        if self.value: return {"name" : self.name, "value" : self.value}
-        else: return {"symbol" : self.name}
+        return {"name" : self.name, "value" : self.value}
 
     @classmethod
     def from_dict(cls, token_dict):
-        if "symbol" in token_dict: return cls(token_dict["symbol"])
-        else: return cls(token_dict["name"], token_dict["value"])
+        return cls(token_dict["name"], token_dict["value"])
 
     @classmethod
     def match(cls, text):
@@ -63,55 +84,56 @@ class Token(object):
         if not text:
             return None
 
-        if text[0] == "\n":
-            return cls("NEWLINE"), text[1:]
-
         text = text.lstrip()
 
-        for symbol in cls.SYMBOLS:
-            result = symbol.match_text(text)
-            if result:
-                value, remain = result
-                return cls(value), remain
+        if cls.BINOP.match(text):
+            for binop in cls.BINOP_GROUP:
+                if binop.match(text):
+                    value, text = binop.lex_and_split(text)
+                    return Token(binop.name, value), text
 
-        for pattern in cls.PATTERNS:
-            result = pattern.match_text(text)
-            if result:
-                value, remain = result
-                return cls(pattern.name, value), remain
+        if cls.DELIM.match(text):
+            for delim in cls.DELIM_GROUP:
+                if delim.match(text):
+                    value, text = delim.lex_and_split(text)
+                    return Token(delim.name, value), text
+
+        if cls.KEYWORD.match(text):
+            for keyword in cls.KEYWORD_GROUP:
+                if keyword.match(text):
+                    value, text = keyword.lex_and_split(text)
+                    return Token(keyword.name, value), text
+
+        if cls.TYPE.match(text):
+            value, text = cls.TYPE.lex_and_split(text)
+            return Token(cls.TYPE.name, value), text
+
+        if cls.ID.match(text):
+            value, text = cls.ID.lex_and_split(text)
+            return Token(cls.ID.name, value), text
+
+        if cls.NUM.match(text):
+            value, text = cls.NUM.lex_and_split(text)
+            return Token(cls.NUM.name, value), text
 
         return None
 
-class Lexer(object):
-
-    @staticmethod
-    def _normalize_text(text):
-        text = re.sub(r"[ \t]*#.*\n", r"\n", text) # remove comments
-        text = re.sub(r"\n\n+", r"\n", text).strip() # remove consecutive newlines
-        text = re.sub(r"[ \t]+\n", r"\n", text) # remove line-trailing whitespace
-        text = re.sub(r"[ \t]+", r" ", text) # strip extra whitespace
-        return text
-
-    @staticmethod
-    def _next_token(text):
-        result = Token.match(text)
-        if result: token, remain = result
-        else: token, remain = None, ''
-        return token, remain
-
-    def __init__(self, text):
-        self.token, self.text = Lexer._next_token(Lexer._normalize_text(text))
-
-    def next_token(self):
-        self.token, self.text = Lexer._next_token(self.text)
-        return self.token
-
-    def __iter__(self):
-        while self.token:
-            yield self.token
-            self.next_token()
+def lex_text(text):
+    while True:
+        s = re.search(r"[ \t]*(#.*)?\n", text)
+        if not s: break
+        line = text[:s.start()]
+        text = text[s.end():]
+        if not line: continue
+        result = Token.match(line)
+        while result:
+            token, line = result
+            yield token
+            result = Token.match(line)
         yield Token("NEWLINE")
 
 if __name__ == "__main__":
-    json.dump([token.to_dict() for token in Lexer(sys.stdin.read())], sys.stdout, indent=4)
+    json.dump([token.to_dict() for token in lex_text(sys.stdin.read())], sys.stdout, indent=4)
 
+    #  for token in lex_text(sys.stdin.read()):
+        #  print(token)
