@@ -81,6 +81,9 @@ class Token(object):
     def __eq__(self, other):
         return str(self.name) == str(other)
 
+    def lexeme(self):
+        return self.value
+
     def to_dict(self):
         return {"name" : self.name, "value" : self.value}
 
