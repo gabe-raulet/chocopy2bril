@@ -6,6 +6,9 @@ var1: int = 3
 var2: int = 21
 var3: int = 5151
 
+unused1: bool = False
+unused2: bool = True
+
 b = a + 1        
 c = (1 + 2*a - b//2) * a - 3  
 

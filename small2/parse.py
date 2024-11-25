@@ -63,8 +63,10 @@ class Parser(object):
         self.match(Token.ASSIGN)
         if type_token.value == "int":
             lit_token = self.match(Token.NUM)
+        elif type_token.value == "bool":
+            lit_token = self.match(Token.BOOL)
         else:
-            self.error("TODO: implement BOOL and STR token")
+            self.error() # TODO: str token if we want to do that eventually
         self.match("NEWLINE")
         return AstVarDef(id_token.value, type_token.value, lit_token.value)
 

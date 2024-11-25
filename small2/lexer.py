@@ -56,6 +56,7 @@ class Token(object):
     ASSIGN = TokenPattern.exact("ASSIGN", "=")
 
     KEYWORD = TokenPattern.regexp("KEYWORD", r"if|elif|else|while|for|print")
+    BOOL    = TokenPattern.regexp("BOOL", r"True|False")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool|str")
     ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
@@ -114,6 +115,10 @@ class Token(object):
         if cls.TYPE.match(text):
             value, text = cls.TYPE.lex_and_split(text)
             return Token(cls.TYPE.name, value), text
+
+        if cls.BOOL.match(text):
+            value, text = cls.BOOL.lex_and_split(text)
+            return Token(cls.BOOL.name, value), text
 
         if cls.ID.match(text):
             value, text = cls.ID.lex_and_split(text)
