@@ -113,7 +113,5 @@ class Lexer(object):
         yield Token("NEWLINE")
 
 if __name__ == "__main__":
-    #  json.dump([token.to_dict() for token in Lexer(sys.stdin.read())], sys.stdout, indent=4)
-    for token in Lexer(sys.stdin.read()):
-        print(token)
+    json.dump([token.to_dict() for token in Lexer(sys.stdin.read())], sys.stdout, indent=4)
 
