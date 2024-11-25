@@ -14,6 +14,14 @@ class AstProgram(Ast):
     def __repr__(self):
         return f"var_defs={self.var_defs}\nstmts={self.stmts}"
 
+    def get_code(self):
+        instrs = []
+        for var_def in self.var_defs:
+            instrs.append(var_def.get_instr())
+        for stmt in self.stmts:
+            instrs += stmt.get_code()
+        return instrs
+
 class AstVarDef(Ast):
 
     def __init__(self, var_id, var_type, literal):
@@ -24,6 +32,13 @@ class AstVarDef(Ast):
     def __repr__(self):
         return f"AstVarDef(id={self.id}, type={self.type}, literal={self.literal})"
 
+    def get_instr(self):
+        instr = {"dest"  : self.id,
+                 "type"  : self.type,
+                 "value" : self.literal,
+                 "op"    : "const"}
+        return instr
+
 class AstPrint(Ast):
 
     def __init__(self, expr):
@@ -31,6 +46,9 @@ class AstPrint(Ast):
 
     def __repr__(self):
         return f"AstPrint({self.expr})"
+
+    def get_code(self):
+        return [{"op" : "nop"}]
 
 class AstToken(Ast):
 
@@ -122,6 +140,9 @@ class Parser(object):
         return expr
 
 if __name__ == "__main__":
-    tokens = list(lex_text(open("t1.py").read()))
+    tokens = list(lex_text(sys.stdin.read()))
     parser = Parser(tokens)
     program = parser.get_program()
+    func = {"name": "main", "instrs" : program.get_code()}
+    prog = {"functions" : [func]}
+    json.dump(prog, sys.stdout, indent=4)
