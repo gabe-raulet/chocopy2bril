@@ -2,6 +2,21 @@ import sys
 import json
 from lexer import Token, TokenPattern, lex_text
 
+class Register(object):
+
+    def __init__(self):
+        self.cur = 0
+
+    def reset(self):
+        self.cur = 0
+
+    def next(self):
+        name = f"_v{self.cur}"
+        self.cur += 1
+        return name
+
+reg = Register()
+
 class Ast(object):
     pass
 
@@ -33,11 +48,7 @@ class AstVarDef(Ast):
         return f"AstVarDef(id={self.id}, type={self.type}, literal={self.literal})"
 
     def get_instr(self):
-        instr = {"dest"  : self.id,
-                 "type"  : self.type,
-                 "value" : self.literal,
-                 "op"    : "const"}
-        return instr
+        return {"dest" : self.id, "type" : self.type, "value" : self.literal, "op" : "const"}
 
 class AstPrint(Ast):
 
@@ -48,15 +59,38 @@ class AstPrint(Ast):
         return f"AstPrint({self.expr})"
 
     def get_code(self):
-        return [{"op" : "nop"}]
+        global reg
+        dest = reg.next()
+        inst1 = {"dest" : dest, "type" : self.expr.type}
+        if isinstance(self.expr, AstLiteral):
+            inst1["op"] = "const"
+            inst1["value"] = self.expr.lit
+        elif isinstance(self.expr, AstVariable):
+            inst1["op"] = "id"
+            inst1["args"] = [self.expr.id]
+        else:
+            raise Exception("Invalid expression for print")
+        inst2 = {"op" : "print", "args" : [dest]}
+        return [inst1, inst2]
 
-class AstToken(Ast):
+class AstLiteral(Ast):
 
-    def __init__(self, token):
-        self.token = token
+    def __init__(self, ctype, literal):
+        self.type = ctype
+        self.lit = literal
 
     def __repr__(self):
-        return f"AstToken({repr(self.token)})"
+        return f"AstLiteral(type={self.type}, literal={self.lit})"
+
+class AstVariable(Ast):
+
+    def __init__(self, var_type, var_id):
+        self.type = var_type
+        self.id = var_id
+
+    def __repr__(self):
+        return f"AstVariable(type={self.type}, id={self.id})"
+
 
 class Parser(object):
 
@@ -132,9 +166,11 @@ class Parser(object):
     def get_expr(self):
         expr = None
         if self.token() == Token.NUM:
-            expr = AstToken(self.match(Token.NUM))
+            result = self.match(Token.NUM)
+            expr = AstLiteral("int", result.value)
         elif self.token() == Token.ID:
-            expr = AstToken(self.match(Token.ID))
+            result = self.match(Token.ID)
+            expr = AstVariable("int", result.value) # TODO: need to be look up type in symbol table
         else:
             self.error("only single token expressions implemented so far")
         return expr

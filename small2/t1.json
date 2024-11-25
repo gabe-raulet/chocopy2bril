@@ -1,0 +1,81 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "var1",
+          "op": "const",
+          "type": "int",
+          "value": 1
+        },
+        {
+          "dest": "var23",
+          "op": "const",
+          "type": "int",
+          "value": 23
+        },
+        {
+          "dest": "var52",
+          "op": "const",
+          "type": "int",
+          "value": 52
+        },
+        {
+          "dest": "two",
+          "op": "const",
+          "type": "int",
+          "value": 2
+        },
+        {
+          "args": [
+            "two"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "var23"
+          ],
+          "dest": "_r0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "_r0"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "var1"
+          ],
+          "dest": "_r0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "_r0"
+          ],
+          "op": "print"
+        },
+        {
+          "args": [
+            "var52"
+          ],
+          "dest": "_r0",
+          "op": "id",
+          "type": "int"
+        },
+        {
+          "args": [
+            "_r0"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
