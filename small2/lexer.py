@@ -12,6 +12,12 @@ class TokenPattern(object):
     def __repr__(self):
         return f"TokenPattern({self.name}, '{self.pattern}')"
 
+    def __str__(self):
+        return self.name
+
+    def __eq__(self, other):
+        return str(self) == str(other)
+
     @classmethod
     def exact(cls, name, lexeme, process=None):
         return cls(name, re.escape(lexeme), process)
@@ -67,6 +73,12 @@ class Token(object):
 
     def __repr__(self):
         return f"Token({self.name}, '{self.value}')"
+
+    def __str__(self):
+        return self.name
+
+    def __eq__(self, other):
+        return str(self.name) == str(other)
 
     def to_dict(self):
         return {"name" : self.name, "value" : self.value}

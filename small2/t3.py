@@ -1,12 +1,12 @@
-#  a: int = 2 # OIJOIJOIJ
-#  b: int = 0
-#  c: int = 0
+a: int = 2 # OIJOIJOIJ
+b: int = 5
+c: int = 4
 
-#  var1: int = 0
-#  var2: int = 0   
-#  var3: int = 0
+var1: int = 3
+var2: int = 21
+var3: int = 5151
 
-#  b = a + 1        
+b = a + 1        
 c = (1 + 2*a - b//2) * a - 3  
 
 # print prime numbers
