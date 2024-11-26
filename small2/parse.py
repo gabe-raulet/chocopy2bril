@@ -45,7 +45,7 @@ class AstVarDef(Ast):
         return f"AstVarDef(id={self.id}, lit={self.lit})"
 
     def get_instr(self):
-        return {"dest" : self.id, "type" : "int", "value" : self.literal, "op" : "const"}
+        return {"dest" : self.id, "type" : "int", "value" : self.lit, "op" : "const"}
 
 class AstPrint(Ast):
 
@@ -58,15 +58,7 @@ class AstPrint(Ast):
     def get_code(self):
         global reg
         dest = reg.next()
-        def_inst = {"dest" : dest, "type" : "int"}
-        if isinstance(self.expr, AstLiteral):
-            def_inst["op"] = "const"
-            def_inst["value"] = self.expr.lit
-        elif isinstance(self.expr, AstVariable):
-            def_inst["op"] = "id"
-            def_inst["args"] = [self.expr.id]
-        else:
-            raise Exception("Invalid expression for print")
+        def_inst = self.expr.get_tmp_assign_instr(dest)
         print_inst = {"op" : "print", "args" : [dest]}
         return [def_inst, print_inst]
 
@@ -78,6 +70,9 @@ class AstLiteral(Ast):
     def __repr__(self):
         return f"AstLiteral({self.lit})"
 
+    def get_tmp_assign_instr(self, dest):
+        return {"dest" : dest, "type" : "int", "op" : "const", "value" : self.lit}
+
 class AstVariable(Ast):
 
     def __init__(self, name):
@@ -85,6 +80,25 @@ class AstVariable(Ast):
 
     def __repr__(self):
         return f"AstVariable({self.id})"
+
+    def get_tmp_assign_instr(self, dest):
+        return {"dest" : dest, "type" : "int", "op" : "id", "args" : [self.id]}
+
+class AstAssign(Ast):
+
+    def __init__(self, target, expr):
+        self.target = target
+        self.expr = expr
+
+    def __repr__(self):
+        return f"AstAssign(target={self.target}, expr={self.expr})"
+
+    def get_code(self):
+        global reg
+        dest = reg.next()
+        def_inst = self.expr.get_tmp_assign_instr(dest)
+        assign_inst = {"dest" : self.target, "type": "int", "op" : "id", "args" : [dest]}
+        return [def_inst, assign_inst]
 
 class Parser(object):
 
@@ -151,8 +165,17 @@ class Parser(object):
                 self.match(Token.RPAREN)
             else:
                 self.error("Only keyword implemented is print, currently") # TODO
-        else:
-            self.error("Only stmt implemented is AstPrint currently") # TODO
+        elif self.token() == Token.ID and self.token(1) == Token.ASSIGN:
+            target_token = self.match(Token.ID)
+            self.match(Token.ASSIGN)
+            if self.token() == Token.NUM:
+                expr = AstLiteral(self.match(Token.NUM).value)
+            elif self.token() == Token.ID:
+                expr = AstVariable(self.match(Token.ID).value)
+            else:
+                self.error()
+            stmt = AstAssign(target_token.value, expr)
+        else: self.error()
         self.match_newline()
         return stmt
 
@@ -171,14 +194,14 @@ class Parser(object):
 def read_text(fname):
     return open(fname).read()
 
-#  if __name__ == "__main__":
-    #  tokens = list(lex_text(sys.stdin.read()))
-    #  parser = Parser(tokens)
-    #  program = parser.get_program()
-    #  func = {"name": "main", "instrs" : program.get_code()}
-    #  prog = {"functions" : [func]}
-    #  json.dump(prog, sys.stdout, indent=4)
+if __name__ == "__main__":
+    tokens = list(lex_text(sys.stdin.read()))
+    parser = Parser(tokens)
+    program = parser.get_program()
+    func = {"name": "main", "instrs" : program.get_code()}
+    prog = {"functions" : [func]}
+    json.dump(prog, sys.stdout, indent=4)
 
-tokens = list(lex_text(read_text("t4.py")))
-parser = Parser(tokens)
+#  tokens = list(lex_text(read_text("t5.py")))
+#  parser = Parser(tokens)
 
