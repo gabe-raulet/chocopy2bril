@@ -15,9 +15,9 @@ class AstPrint(Ast):
         return f"AstPrint({self.expr})"
 
     def get_instrs(self, func):
-        load_inst, dest = self.expr.load(func)
-        print_inst = {"op" : "print", "args" : [dest]}
-        return [load_inst, print_inst]
+        instrs, dest = self.expr.get_instrs(func)
+        instrs.append({"op" : "print", "args" : [dest]})
+        return instrs
 
 class AstAssign(Ast):
 
@@ -29,9 +29,9 @@ class AstAssign(Ast):
         return f"AstAssign(target={self.target}, expr={self.expr})"
 
     def get_instrs(self, func):
-        load_inst, dest = self.expr.load(func)
-        assign_inst = {"dest" : self.target.name, "type" : self.target.type, "op" : "id", "args" : [dest]}
-        return [load_inst, assign_inst]
+        instrs, dest = self.expr.get_instrs(func)
+        instrs.append({"dest" : self.target.name, "type" : self.target.type, "op" : "id", "args" : [dest]})
+        return instrs
 
 class AstLiteral(Ast):
 
@@ -42,9 +42,9 @@ class AstLiteral(Ast):
     def __repr__(self):
         return f"AstLiteral(lit={self.lit}, type={self.type})"
 
-    def load(self, func):
+    def get_instrs(self, func):
         dest = func.next_reg()
-        return {"dest" : dest, "type" : self.type, "op" : "const", "value" : self.lit}, dest
+        return [{"dest" : dest, "type" : self.type, "op" : "const", "value" : self.lit}], dest
 
 class AstVariable(Ast):
 
@@ -55,9 +55,9 @@ class AstVariable(Ast):
     def __repr__(self):
         return f"AstVariable(name={self.name}, type={self.type})"
 
-    def load(self, func):
+    def get_instrs(self, func):
         dest = func.next_reg()
-        return {"dest" : dest, "type" : self.type, "op" : "id", "args" : [self.name]}, dest
+        return [{"dest" : dest, "type" : self.type, "op" : "id", "args" : [self.name]}], dest
 
 class AstVarDef(Ast):
 
