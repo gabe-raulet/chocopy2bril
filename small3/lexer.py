@@ -72,11 +72,18 @@ class Token(object):
     def __repr__(self):
         return f"Token({self.name}, '{self.value}')"
 
-    def matches(self, other):
+    def _matches(self, other):
         if isinstance(other, str): pass
         elif isinstance(other, (Token, TokenPattern)): other = other.name
         else: raise Exception()
         return self.name == other
+
+    def matches(self, other):
+        if not isinstance(other, (list, tuple)): other = [other]
+        for o in other:
+            if self._matches(o):
+                return True
+        return False
 
     def to_dict(self):
         return {"name" : self.name, "value" : self.value}

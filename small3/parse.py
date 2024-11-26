@@ -15,8 +15,8 @@ class AstPrint(Ast):
         return f"AstPrint({self.expr})"
 
     def get_instrs(self, func):
-        load_inst = self.expr.load(func)
-        print_inst = {"op" : "print", "args" : [load_inst["dest"]]}
+        load_inst, dest = self.expr.load(func)
+        print_inst = {"op" : "print", "args" : [dest]}
         return [load_inst, print_inst]
 
 class AstAssign(Ast):
@@ -29,8 +29,8 @@ class AstAssign(Ast):
         return f"AstAssign(target={self.target}, expr={self.expr})"
 
     def get_instrs(self, func):
-        load_inst = self.expr.load(func)
-        assign_inst = {"dest" : self.target.name, "type" : self.target.type, "op" : "id", "args" : [load_inst["dest"]]}
+        load_inst, dest = self.expr.load(func)
+        assign_inst = {"dest" : self.target.name, "type" : self.target.type, "op" : "id", "args" : [dest]}
         return [load_inst, assign_inst]
 
 class AstLiteral(Ast):
@@ -43,7 +43,8 @@ class AstLiteral(Ast):
         return f"AstLiteral(lit={self.lit}, type={self.type})"
 
     def load(self, func):
-        return {"dest" : func.next_reg(), "type" : self.type, "op" : "const", "value" : self.lit}
+        dest = func.next_reg()
+        return {"dest" : dest, "type" : self.type, "op" : "const", "value" : self.lit}, dest
 
 class AstVariable(Ast):
 
@@ -55,7 +56,8 @@ class AstVariable(Ast):
         return f"AstVariable(name={self.name}, type={self.type})"
 
     def load(self, func):
-        return {"dest" : func.next_reg(), "type" : self.type, "op" : "id", "args" : [self.name]}
+        dest = func.next_reg()
+        return {"dest" : dest, "type" : self.type, "op" : "id", "args" : [self.name]}, dest
 
 class AstVarDef(Ast):
 
@@ -78,6 +80,9 @@ class AstBinOp(Ast):
         self.op = op
         self.left = left
         self.right = right
+
+    def __repr__(self):
+        return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
 
 class Function(object):
 
@@ -184,7 +189,28 @@ class Parser(object):
         return stmt
 
     def get_expr(self):
-        if self.token().matches(Token.NUM):
+        expr = self.get_term()
+        while self.token().matches([Token.ADD, Token.SUB]):
+            op = self.token().name
+            self.advance()
+            expr = AstBinOp(op=op, left=expr, right=self.get_term())
+        return expr
+
+    def get_term(self):
+        term = self.get_factor()
+        while self.token().matches([Token.MUL, Token.DIV]):
+            op = self.token().name
+            self.advance()
+            term = AstBinOp(op=op, left=term, right=self.get_factor())
+        return term
+
+    def get_factor(self):
+        if self.token().matches(Token.LPAREN):
+            self.match(Token.LPAREN)
+            factor = self.get_expr()
+            self.match(Token.RPAREN)
+            return factor
+        elif self.token().matches(Token.NUM):
             return AstLiteral(self.match(Token.NUM).value)
         elif self.token().matches(Token.ID):
             return AstVariable(self.match(Token.ID).value)

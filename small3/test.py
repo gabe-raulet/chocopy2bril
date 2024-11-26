@@ -9,7 +9,9 @@ def read_text(fname):
 def read_tokens(text):
     return list(lex_text(text))
 
-tokens = read_tokens(read_text("t1.py"))
+tokens = read_tokens(read_text("t6.py"))
 parser = Parser(tokens)
 prog = parser.parse()
+
+
 #  var_defs = parser.get_var_defs()
