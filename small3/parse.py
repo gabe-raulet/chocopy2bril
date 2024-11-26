@@ -25,6 +25,14 @@ class AstAssign(Ast):
         self.target = target
         self.expr = expr
 
+    def __repr__(self):
+        return f"AstAssign(target={self.target}, expr={self.expr})"
+
+    def get_instrs(self, func):
+        load_inst = self.expr.load(func)
+        assign_inst = {"dest" : self.target.name, "type" : self.target.type, "op" : "id", "args" : [load_inst["dest"]]}
+        return [load_inst, assign_inst]
+
 class AstLiteral(Ast):
 
     def __init__(self, lit):
@@ -166,6 +174,10 @@ class Parser(object):
                 self.match(Token.RPAREN)
             else:
                 self.error()
+        elif self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN):
+            target = AstVariable(self.match(Token.ID).value)
+            self.match(Token.ASSIGN)
+            stmt = AstAssign(target, self.get_expr())
         else:
             self.error()
         self.match_newline()
