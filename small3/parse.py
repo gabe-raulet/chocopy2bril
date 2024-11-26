@@ -1,3 +1,4 @@
+import re
 import sys
 import json
 from lexer import Token
@@ -13,8 +14,10 @@ class AstPrint(Ast):
     def __repr__(self):
         return f"AstPrint({self.expr})"
 
-    def get_instrs(self):
-        return [{"op" : "print", "args" : [self.expr.name]}]
+    def get_instrs(self, func):
+        load_inst = self.expr.load(func)
+        print_inst = {"op" : "print", "args" : [load_inst["dest"]]}
+        return [load_inst, print_inst]
 
 class AstAssign(Ast):
 
@@ -31,6 +34,9 @@ class AstLiteral(Ast):
     def __repr__(self):
         return f"AstLiteral(lit={self.lit}, type={self.type})"
 
+    def load(self, func):
+        return {"dest" : func.next_reg(), "type" : self.type, "op" : "const", "value" : self.lit}
+
 class AstVariable(Ast):
 
     def __init__(self, name):
@@ -40,9 +46,14 @@ class AstVariable(Ast):
     def __repr__(self):
         return f"AstVariable(name={self.name}, type={self.type})"
 
+    def load(self, func):
+        return {"dest" : func.next_reg(), "type" : self.type, "op" : "id", "args" : [self.name]}
+
 class AstVarDef(Ast):
 
     def __init__(self, var, lit):
+        m_obj = re.match(r"r[0-9]+", var.name)
+        if m_obj and m_obj.group() == var.name: raise Exception("Can't use register names as variables")
         assert var.type == lit.type
         self.var = var
         self.lit = lit
@@ -68,10 +79,15 @@ class Function(object):
         self.vars = []
         self.stmts = []
 
+    def next_reg(self):
+        reg = f"r{self.reg}"
+        self.reg += 1
+        return reg
+
     def get_instrs(self):
         instrs = []
         for var in self.vars: instrs.append(var.get_instr())
-        for stmt in self.stmts: instrs += stmt.get_instrs()
+        for stmt in self.stmts: instrs += stmt.get_instrs(self)
         return {"name" : self.name, "instrs" : instrs}
 
 class Program(object):
@@ -156,8 +172,12 @@ class Parser(object):
         return stmt
 
     def get_expr(self):
-        name = self.match(Token.ID).value
-        return AstVariable(name)
+        if self.token().matches(Token.NUM):
+            return AstLiteral(self.match(Token.NUM).value)
+        elif self.token().matches(Token.ID):
+            return AstVariable(self.match(Token.ID).value)
+        else:
+            self.error()
 
 if __name__ == "__main__":
     tokens = [Token.from_dict(token) for token in json.load(sys.stdin)]
