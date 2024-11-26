@@ -72,10 +72,7 @@ class Function(object):
         instrs = []
         for var in self.vars: instrs.append(var.get_instr())
         for stmt in self.stmts: instrs += stmt.get_instrs()
-        return instrs
-
-    def get_func(self):
-        return {"name" : self.name, "instrs" : self.get_instrs()}
+        return {"name" : self.name, "instrs" : instrs}
 
 class Program(object):
 
@@ -83,7 +80,7 @@ class Program(object):
         self.funcs = []
 
     def get_prog(self):
-        return {"functions" : [func.get_func() for func in self.funcs]}
+        return {"functions" : [func.get_instrs() for func in self.funcs]}
 
 class Parser(object):
 
