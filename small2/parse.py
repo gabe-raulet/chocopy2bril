@@ -84,6 +84,16 @@ class AstVariable(Ast):
     def get_tmp_assign_instr(self, dest):
         return {"dest" : dest, "type" : "int", "op" : "id", "args" : [self.id]}
 
+class AstBinOp(Ast):
+
+    def __init__(self, op, left, right):
+        self.op = op
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
+
 class AstAssign(Ast):
 
     def __init__(self, target, expr):
@@ -168,28 +178,39 @@ class Parser(object):
         elif self.token() == Token.ID and self.token(1) == Token.ASSIGN:
             target_token = self.match(Token.ID)
             self.match(Token.ASSIGN)
-            if self.token() == Token.NUM:
-                expr = AstLiteral(self.match(Token.NUM).value)
-            elif self.token() == Token.ID:
-                expr = AstVariable(self.match(Token.ID).value)
-            else:
-                self.error()
-            stmt = AstAssign(target_token.value, expr)
+            stmt = AstAssign(target_token.value, self.get_expr())
         else: self.error()
         self.match_newline()
         return stmt
 
     def get_expr(self):
-        expr = None
-        if self.token() == Token.NUM:
-            result = self.match(Token.NUM)
-            expr = AstLiteral(result.value)
+        expr = self.get_term()
+        while self.token() == Token.ADD or self.token() == Token.SUB:
+            op = self.token().name
+            self.match(op)
+            expr = AstBinOp(op=op, left=expr, right=self.get_term())
+        return expr
+
+    def get_term(self):
+        term = self.get_factor()
+        while self.token() == Token.MUL or self.token() == Token.DIV or self.token() == Token.MOD:
+            op = self.token().name
+            self.match(op)
+            term = AstBinOp(op=op, left=term, right=self.get_factor())
+        return term
+
+    def get_factor(self):
+        if self.token() == Token.LPAREN:
+            self.match(Token.LPAREN)
+            factor = self.get_expr()
+            self.match(Token.RPAREN)
+            return factor
+        elif self.token() == Token.NUM:
+            return AstLiteral(self.match(Token.NUM).value)
         elif self.token() == Token.ID:
-            result = self.match(Token.ID)
-            expr = AstVariable(result.value)
+            return AstVariable(self.match(Token.ID).value)
         else:
             self.error()
-        return expr
 
 def read_text(fname):
     return open(fname).read()
@@ -202,6 +223,6 @@ if __name__ == "__main__":
     prog = {"functions" : [func]}
     json.dump(prog, sys.stdout, indent=4)
 
-#  tokens = list(lex_text(read_text("t5.py")))
+#  tokens = list(lex_text(read_text("t4.py")))
 #  parser = Parser(tokens)
 
