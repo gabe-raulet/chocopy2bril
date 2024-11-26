@@ -216,13 +216,11 @@ def read_text(fname):
     return open(fname).read()
 
 if __name__ == "__main__":
-    tokens = list(lex_text(sys.stdin.read()))
+    tokens = [Token.from_dict(token) for token in json.load(sys.stdin)]
     parser = Parser(tokens)
     program = parser.get_program()
-    func = {"name": "main", "instrs" : program.get_code()}
+    func = {"name" : "main", "instrs" : program.get_code()}
     prog = {"functions" : [func]}
     json.dump(prog, sys.stdout, indent=4)
 
 #  tokens = list(lex_text(read_text("t4.py")))
-#  parser = Parser(tokens)
-
