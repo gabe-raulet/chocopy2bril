@@ -85,6 +85,18 @@ class AstBinOp(Ast):
         return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
 
     @staticmethod
+    def value_instr(dest, op, lhs, rhs, func):
+        op = op.lower()
+        if op == "mod":
+            instrs = []
+            instrs.append({"dest" : dest, "op" : "div", "type" : "int", "args" : [lhs, rhs]})
+            instrs.append({"dest" : dest, "op" : "mul", "type" : "int", "args" : [dest, rhs]})
+            instrs.append({"dest" : dest, "op" : "sub", "type" : "int", "args" : [lhs, dest]})
+            return instrs
+        else:
+            return [{"dest" : dest, "op" : op, "type" : "int", "args" : [lhs, rhs]}]
+
+    @staticmethod
     def traverse(node, func, instrs, stack):
         if isinstance(node, AstBinOp):
             AstBinOp.traverse(node.left, func, instrs, stack)
@@ -92,7 +104,8 @@ class AstBinOp(Ast):
             rhs = stack.pop()
             lhs = stack.pop()
             dest = func.next_reg()
-            instrs.append({"dest" : dest, "type" : "int", "op" : node.op.lower(), "args" : [lhs, rhs]})
+            instrs += AstBinOp.value_instr(dest, node.op, lhs, rhs, func)
+            #  instrs.append(AstBinOp.value_instr(dest, node.op, lhs, rhs, func))
             stack.append(dest)
         else:
             insts, dest = node.get_instrs(func)
@@ -220,7 +233,7 @@ class Parser(object):
 
     def get_term(self):
         term = self.get_factor()
-        while self.token().matches([Token.MUL, Token.DIV]):
+        while self.token().matches([Token.MUL, Token.DIV, Token.MOD]):
             op = self.token().name
             self.advance()
             term = AstBinOp(op=op, left=term, right=self.get_factor())
