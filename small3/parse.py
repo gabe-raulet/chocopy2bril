@@ -84,6 +84,28 @@ class AstBinOp(Ast):
     def __repr__(self):
         return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
 
+    @staticmethod
+    def traverse(node, func, instrs, stack):
+        if isinstance(node, AstBinOp):
+            AstBinOp.traverse(node.left, func, instrs, stack)
+            AstBinOp.traverse(node.right, func, instrs, stack)
+            rhs = stack.pop()
+            lhs = stack.pop()
+            dest = func.next_reg()
+            instrs.append({"dest" : dest, "type" : "int", "op" : node.op.lower(), "args" : [lhs, rhs]})
+            stack.append(dest)
+        else:
+            insts, dest = node.get_instrs(func)
+            instrs += insts
+            stack.append(dest)
+
+    def get_instrs(self, func):
+        instrs = []
+        stack = []
+        AstBinOp.traverse(self, func, instrs, stack)
+        dest = stack.pop()
+        return instrs, dest
+
 class Function(object):
 
     def __init__(self, name="main"):

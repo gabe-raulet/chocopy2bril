@@ -13,5 +13,3 @@ tokens = read_tokens(read_text("t6.py"))
 parser = Parser(tokens)
 prog = parser.parse()
 
-
-#  var_defs = parser.get_var_defs()
