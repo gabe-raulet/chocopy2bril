@@ -105,7 +105,6 @@ class AstBinOp(Ast):
             lhs = stack.pop()
             dest = func.next_reg()
             instrs += AstBinOp.value_instr(dest, node.op, lhs, rhs, func)
-            #  instrs.append(AstBinOp.value_instr(dest, node.op, lhs, rhs, func))
             stack.append(dest)
         else:
             insts, dest = node.get_instrs(func)
