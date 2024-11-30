@@ -50,8 +50,8 @@ class Token(object):
     ASSIGN = TokenPattern.exact("ASSIGN", "=")
 
     KEYWORD = TokenPattern.regexp("KEYWORD", r"print")
-    TYPE    = TokenPattern.regexp("TYPE", r"int")
-    #  BOOL    = TokenPattern.regexp("BOOL", r"True|False")
+    TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
+    BOOL    = TokenPattern.regexp("BOOL", r"True|False", process=lambda v: {"True" : True, "False" : False}[v])
 
     ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
@@ -110,17 +110,17 @@ class Token(object):
                     value, text = delim.lex_and_split(text)
                     return Token(delim.name, value), text
 
-        if cls.KEYWORD.match(text):
-            value, text = cls.KEYWORD.lex_and_split(text)
-            return Token(cls.KEYWORD.name, value), text
+        if cls.BOOL.match(text):
+            value, text = cls.BOOL.lex_and_split(text)
+            return Token(cls.BOOL.name, value), text
 
         if cls.TYPE.match(text):
             value, text = cls.TYPE.lex_and_split(text)
             return Token(cls.TYPE.name, value), text
 
-        #  if cls.BOOL.match(text):
-            #  value, text = cls.BOOL.lex_and_split(text)
-            #  return Token(cls.BOOL.name, value), text
+        if cls.KEYWORD.match(text):
+            value, text = cls.KEYWORD.lex_and_split(text)
+            return Token(cls.KEYWORD.name, value), text
 
         if cls.ID.match(text):
             value, text = cls.ID.lex_and_split(text)
@@ -150,6 +150,9 @@ class SymbolTable(object):
 
     def __init__(self):
         self.table = {}
+
+    def __repr__(self):
+        return f"SymbolTable({self.table})"
 
     def add_id(self, name, value, type):
         self.table[name] = (value, type)
@@ -181,9 +184,9 @@ class AstVariable(Ast):
 
 class AstLiteral(Ast):
 
-    def __init__(self, value):
+    def __init__(self, value, type):
         self.value = value
-        self.type = "int"
+        self.type = type
 
     def __repr__(self):
         return f"AstLiteral(value={self.value}, type={self.type})"
@@ -243,6 +246,7 @@ class Parser(object):
         type = self.match(Token.TYPE).value
         self.match(Token.ASSIGN)
         if type == "int": value = self.match(Token.NUM).value
+        elif type == "bool": value = self.match(Token.BOOL).value
         else: self.error(f"unknown type: {type}")
         self.match_newline()
         return name, value, type
@@ -306,7 +310,7 @@ class Parser(object):
             self.match(Token.RPAREN)
             return factor
         elif self.token().matches(Token.NUM):
-            return AstLiteral(self.match(Token.NUM).value)
+            return AstLiteral(value=self.match(Token.NUM).value, type="int")
         elif self.token().matches(Token.ID):
             return AstVariable(self.match(Token.ID).value)
         else:
@@ -315,7 +319,7 @@ class Parser(object):
 #  if __name__ == "__main__":
     #  tokens = list(lex_text(sys.stdin.read()))
 
-prog = open("t5.py").read()
+prog = open("prog1.py").read()
 tokens = list(lex_text(prog))
 parser = Parser(tokens)
 table, stmts = parser.parse()
