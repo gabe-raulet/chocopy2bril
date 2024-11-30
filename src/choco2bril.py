@@ -43,7 +43,8 @@ class Token(object):
                   "NOT" : 4,
                    "EQ" : 5,  "NE" : 5,  "LT" : 5, "GT" : 5, "LE" : 5, "GE" : 5,
                   "ADD" : 6, "SUB" : 6,
-                  "MUL" : 7, "DIV" : 7, "MOD" : 7}
+                  "MUL" : 7, "DIV" : 7, "MOD" : 7,
+                  "USUB" : 8}
 
     @staticmethod
     def get_precedence(op):
@@ -76,11 +77,11 @@ class Token(object):
     ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
 
-    BINOP_GROUP = [ADD, SUB, MUL, DIV, MOD, AND, OR]
+    OP_GROUP = [ADD, SUB, MUL, DIV, MOD, AND, OR, EQ, NE, LT, GT, LE, GE, NOT]
     DELIM_GROUP = [LPAREN, RPAREN, COLON, ASSIGN]
-    EXACT_GROUP = [BINOP_GROUP, DELIM_GROUP]
+    EXACT_GROUP = [OP_GROUP, DELIM_GROUP]
 
-    BINOP = TokenPattern.group("BINOP", BINOP_GROUP)
+    OP = TokenPattern.group("OP", OP_GROUP)
     DELIM = TokenPattern.group("DELIM", DELIM_GROUP)
 
     def __init__(self, name, value=None):
@@ -118,11 +119,11 @@ class Token(object):
 
         text = text.lstrip()
 
-        if cls.BINOP.match(text):
-            for binop in cls.BINOP_GROUP:
-                if binop.match(text):
-                    value, text = binop.lex_and_split(text)
-                    return Token(binop.name, value), text
+        if cls.OP.match(text):
+            for op in cls.OP_GROUP:
+                if op.match(text):
+                    value, text = op.lex_and_split(text)
+                    return Token(op.name, value), text
 
         if cls.DELIM.match(text):
             for delim in cls.DELIM_GROUP:
@@ -240,6 +241,15 @@ class AstBinOp(Ast):
         elif self.op == "SUB": return lhs - rhs
         elif self.op == "MUL": return lhs * rhs
         elif self.op == "DIV": return lhs // rhs
+        elif self.op == "MOD": return lhs % rhs
+        elif self.op == "AND": return lhs and rhs
+        elif self.op == "OR": return lhs or rhs
+        elif self.op == "EQ": return lhs == rhs
+        elif self.op == "NE": return lhs != rhs
+        elif self.op == "LT": return lhs < rhs
+        elif self.op == "GT": return lhs > rhs
+        elif self.op == "LE": return lhs <= rhs
+        elif self.op == "GE": return lhs >= rhs
         else: raise Exception()
 
 class AstUnOp(Ast):
@@ -250,6 +260,11 @@ class AstUnOp(Ast):
 
     def __repr__(self):
         return f"AstUnOp(op={self.op}, expr={self.expr})"
+
+    def evaluate(self):
+        if self.op == "NOT": return not self.expr.evaluate()
+        elif self.op == "USUB": return -1 * self.expr.evaluate()
+        else: raise Exception()
 
 class Parser(object):
 
@@ -334,8 +349,19 @@ class Parser(object):
             expr = self.get_expr()
             self.match(Token.RPAREN)
             return expr
+        elif self.token().matches(Token.SUB):
+            self.advance()
+            if self.token().matches(Token.NUM):
+                return AstLiteral(value=self.match(Token.NUM).value * -1, type="int")
+            else:
+                return AstUnOp(op="USUB", expr=self.get_expr())
+        elif self.token().matches(Token.NOT):
+            self.advance()
+            return AstUnOp(op="NOT", expr=self.get_expr())
         elif self.token().matches(Token.NUM):
             return AstLiteral(value=self.match(Token.NUM).value, type="int")
+        elif self.token().matches(Token.BOOL):
+            return AstLiteral(value=self.match(Token.BOOL).value, type="bool")
         elif self.token().matches(Token.ID):
             return AstVariable(self.match(Token.ID).value)
         else:
@@ -374,3 +400,8 @@ expr4 = parse_expr("(2 + 3) * (5 + 2)")
 expr5 = parse_expr("(2 * 3) + (5 * 2)")
 expr6 = parse_expr("535 - 13 * (((2 + 3) * (5 + 2)) - 1)")
 expr7 = parse_expr("1 + 2 + 3 * 4 + 5 + 6 // 7 - 4 - 3")
+
+expr8 = parse_expr("not True")
+expr9 = parse_expr("(not (3 < 4)) == False")
+expr10 = parse_expr("-(4 + 3)")
+
