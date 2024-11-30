@@ -38,20 +38,38 @@ class TokenPattern(object):
 
 class Token(object):
 
+    PRECEDENCE = { "OR" : 2,
+                  "AND" : 3,
+                  "NOT" : 4,
+                   "EQ" : 5,  "NE" : 5,  "LT" : 5, "GT" : 5, "LE" : 5, "GE" : 5,
+                  "ADD" : 6, "SUB" : 6,
+                  "MUL" : 7, "DIV" : 7, "MOD" : 7}
+
+    @staticmethod
+    def get_precedence(op):
+        return Token.PRECEDENCE.get(op, -float('inf'))
+
+    OR = TokenPattern.exact("OR", "or")
+    AND = TokenPattern.exact("AND", "and")
+    NOT = TokenPattern.exact("NOT", "not")
+    EQ = TokenPattern.exact("EQ", "==")
+    NE = TokenPattern.exact("NE", "!=")
+    LT = TokenPattern.exact("LT", "<")
+    GT = TokenPattern.exact("GT", ">")
+    LE = TokenPattern.exact("LE", "<=")
+    GE = TokenPattern.exact("GE", ">=")
     ADD = TokenPattern.exact("ADD", "+")
     SUB = TokenPattern.exact("SUB", "-")
     MUL = TokenPattern.exact("MUL", "*")
     DIV = TokenPattern.exact("DIV", "//")
     MOD = TokenPattern.exact("MOD", "%")
-    AND = TokenPattern.exact("AND", "and")
-    OR  = TokenPattern.exact("OR", "or")
 
     LPAREN = TokenPattern.exact("LPAREN", "(")
     RPAREN = TokenPattern.exact("RPAREN", ")")
     COLON  = TokenPattern.exact("COLON", ":")
     ASSIGN = TokenPattern.exact("ASSIGN", "=")
 
-    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|not")
+    KEYWORD = TokenPattern.regexp("KEYWORD", r"print")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
     BOOL    = TokenPattern.regexp("BOOL", r"True|False", process=lambda v: {"True" : True, "False" : False}[v])
 
@@ -193,6 +211,9 @@ class AstLiteral(Ast):
     def __repr__(self):
         return f"AstLiteral(value={self.value}, type={self.type})"
 
+    def evaluate(self):
+        return self.value
+
 class AstAssign(Ast):
 
     def __init__(self, target, expr):
@@ -211,6 +232,15 @@ class AstBinOp(Ast):
 
     def __repr__(self):
         return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
+
+    def evaluate(self):
+        lhs = self.left.evaluate()
+        rhs = self.right.evaluate()
+        if self.op == "ADD": return lhs + rhs
+        elif self.op == "SUB": return lhs - rhs
+        elif self.op == "MUL": return lhs * rhs
+        elif self.op == "DIV": return lhs // rhs
+        else: raise Exception()
 
 class AstUnOp(Ast):
 
@@ -298,39 +328,27 @@ class Parser(object):
         self.match_newline()
         return stmt
 
-    def get_expr(self):
-        expr = self.get_term()
-        while self.token().matches([Token.ADD, Token.SUB, Token.OR]):
-            op = self.token().name
-            self.advance()
-            expr = AstBinOp(op=op, left=expr, right=self.get_term())
-        return expr
-
-    def get_term(self):
-        term = self.get_factor()
-        while self.token().matches([Token.MUL, Token.DIV, Token.MOD, Token.AND]):
-            op = self.token().name
-            self.advance()
-            term = AstBinOp(op=op, left=term, right=self.get_factor())
-        return term
-
-    def get_factor(self):
+    def get_atom(self):
         if self.token().matches(Token.LPAREN):
             self.match(Token.LPAREN)
-            factor = self.get_expr()
+            expr = self.get_expr()
             self.match(Token.RPAREN)
-            return factor
-        elif self.token().matches(Token.KEYWORD) and self.token().value == "not":
-            self.match(Token.KEYWORD)
-            return AstUnOp(op="NOT", expr=self.get_factor())
+            return expr
         elif self.token().matches(Token.NUM):
             return AstLiteral(value=self.match(Token.NUM).value, type="int")
-        elif self.token().matches(Token.BOOL):
-            return AstLiteral(value=self.match(Token.BOOL).value, type="bool")
         elif self.token().matches(Token.ID):
             return AstVariable(self.match(Token.ID).value)
         else:
             self.error()
+
+    def get_expr(self, min_prec=1):
+        lhs = self.get_atom()
+        while self.token() and Token.get_precedence(self.token().name) >= min_prec:
+            op = self.token().name
+            prec = Token.get_precedence(op)
+            self.advance()
+            lhs = AstBinOp(op=op, left=lhs, right=self.get_expr(prec+1))
+        return lhs
 
 #  if __name__ == "__main__":
     #  tokens = list(lex_text(sys.stdin.read()))
@@ -346,5 +364,13 @@ def parse_expr(expr):
     parser = Parser(tokens)
     return parser.get_expr()
 
-expr = parse_expr("(not (True or False)) and False")
-#  expr = parse_expr("(15 + 34) * 12")
+def my_eval(expr):
+    return parse_expr(expr).evaluate()
+
+expr1 = parse_expr("(1 + 2) * 3")
+expr2 = parse_expr("1 + 2 * 3")
+expr3 = parse_expr("1 + (2 * 3)")
+expr4 = parse_expr("(2 + 3) * (5 + 2)")
+expr5 = parse_expr("(2 * 3) + (5 * 2)")
+expr6 = parse_expr("535 - 13 * (((2 + 3) * (5 + 2)) - 1)")
+expr7 = parse_expr("1 + 2 + 3 * 4 + 5 + 6 // 7 - 4 - 3")
