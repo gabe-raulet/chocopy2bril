@@ -319,7 +319,15 @@ class Parser(object):
 #  if __name__ == "__main__":
     #  tokens = list(lex_text(sys.stdin.read()))
 
-prog = open("prog1.py").read()
-tokens = list(lex_text(prog))
-parser = Parser(tokens)
-table, stmts = parser.parse()
+#  prog = open("prog1.py").read()
+#  tokens = list(lex_text(prog))
+#  parser = Parser(tokens)
+#  table, stmts = parser.parse()
+
+def parse_expr(expr):
+    expr += "\n"
+    tokens = list(lex_text(expr))
+    parser = Parser(tokens)
+    return parser.get_expr()
+
+expr = parse_expr("(15 + 34) * 12")
