@@ -77,7 +77,7 @@ class Token(object):
     ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
 
-    OP_GROUP = [ADD, SUB, MUL, DIV, MOD, AND, OR, EQ, NE, LT, GT, LE, GE, NOT]
+    OP_GROUP = [ADD, SUB, MUL, DIV, MOD, AND, OR, EQ, NE, LE, GE, LT, GT, NOT]
     DELIM_GROUP = [LPAREN, RPAREN, COLON, ASSIGN]
     EXACT_GROUP = [OP_GROUP, DELIM_GROUP]
 
@@ -203,6 +203,9 @@ class AstVariable(Ast):
     def __repr__(self):
         return f"AstVariable(name='{self.name}')"
 
+    def get_type(self, table):
+        return table.get_id_type(self.name)
+
 class AstLiteral(Ast):
 
     def __init__(self, value, type):
@@ -211,6 +214,9 @@ class AstLiteral(Ast):
 
     def __repr__(self):
         return f"AstLiteral(value={self.value}, type={self.type})"
+
+    def get_type(self, table):
+        return self.type
 
     def evaluate(self):
         return self.value
@@ -224,6 +230,9 @@ class AstAssign(Ast):
     def __repr__(self):
         return f"AstAssign(target={self.target}, expr={self.expr})"
 
+    def get_type(self, table):
+        return None
+
 class AstBinOp(Ast):
 
     def __init__(self, op, left, right):
@@ -233,6 +242,24 @@ class AstBinOp(Ast):
 
     def __repr__(self):
         return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
+
+    def get_type(self, table):
+        lhs = self.left.get_type(table)
+        rhs = self.right.get_type(table)
+        if self.op in {"ADD", "SUB", "MUL", "DIV", "MOD"}:
+            assert lhs == "int" and rhs == "int"
+            return "int"
+        elif self.op in {"LT", "GT", "LE", "GE"}:
+            assert lhs == "int" and rhs == "int"
+            return "bool"
+        elif self.op in {"EQ", "NE"}:
+            assert lhs == rhs
+            return "bool"
+        elif self.op in {"AND", "OR"}:
+            assert lhs == "bool" and rhs == "bool"
+            return "bool"
+        else:
+            raise Exception("Type error")
 
     def evaluate(self):
         lhs = self.left.evaluate()
@@ -393,15 +420,24 @@ def parse_expr(expr):
 def my_eval(expr):
     return parse_expr(expr).evaluate()
 
-expr1 = parse_expr("(1 + 2) * 3")
-expr2 = parse_expr("1 + 2 * 3")
-expr3 = parse_expr("1 + (2 * 3)")
-expr4 = parse_expr("(2 + 3) * (5 + 2)")
-expr5 = parse_expr("(2 * 3) + (5 * 2)")
-expr6 = parse_expr("535 - 13 * (((2 + 3) * (5 + 2)) - 1)")
-expr7 = parse_expr("1 + 2 + 3 * 4 + 5 + 6 // 7 - 4 - 3")
+#  expr1 = parse_expr("(1 + 2) * 3")
+#  expr2 = parse_expr("1 + 2 * 3")
+#  expr3 = parse_expr("1 + (2 * 3)")
+#  expr4 = parse_expr("(2 + 3) * (5 + 2)")
+#  expr5 = parse_expr("(2 * 3) + (5 * 2)")
+#  expr6 = parse_expr("535 - 13 * (((2 + 3) * (5 + 2)) - 1)")
+#  expr7 = parse_expr("1 + 2 + 3 * 4 + 5 + 6 // 7 - 4 - 3")
 
-expr8 = parse_expr("not True")
-expr9 = parse_expr("(not (3 < 4)) == False")
-expr10 = parse_expr("-(4 + 3)")
+#  expr8 = parse_expr("not True")
+#  expr9 = parse_expr("(not (3 < 4)) == False")
+#  expr10 = parse_expr("-(4 + 3)")
 
+#  table = SymbolTable()
+#  table.add_id("a", 4, "int")
+#  table.add_id("b", 3, "int")
+#  table.add_id("c", 2, "int")
+#  table.add_id("d", False, "bool")
+
+#  expr = parse_expr("a + b - c")
+#  expr = parse_expr("(d == True) and (a == b + 1)")
+#  expr = parse_expr("d <= d")
