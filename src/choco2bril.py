@@ -43,20 +43,22 @@ class Token(object):
     MUL = TokenPattern.exact("MUL", "*")
     DIV = TokenPattern.exact("DIV", "//")
     MOD = TokenPattern.exact("MOD", "%")
+    AND = TokenPattern.exact("AND", "and")
+    OR  = TokenPattern.exact("OR", "or")
 
     LPAREN = TokenPattern.exact("LPAREN", "(")
     RPAREN = TokenPattern.exact("RPAREN", ")")
     COLON  = TokenPattern.exact("COLON", ":")
     ASSIGN = TokenPattern.exact("ASSIGN", "=")
 
-    KEYWORD = TokenPattern.regexp("KEYWORD", r"print")
+    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|not")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
     BOOL    = TokenPattern.regexp("BOOL", r"True|False", process=lambda v: {"True" : True, "False" : False}[v])
 
     ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
 
-    BINOP_GROUP = [ADD, SUB, MUL, DIV, MOD]
+    BINOP_GROUP = [ADD, SUB, MUL, DIV, MOD, AND, OR]
     DELIM_GROUP = [LPAREN, RPAREN, COLON, ASSIGN]
     EXACT_GROUP = [BINOP_GROUP, DELIM_GROUP]
 
@@ -210,6 +212,15 @@ class AstBinOp(Ast):
     def __repr__(self):
         return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
 
+class AstUnOp(Ast):
+
+    def __init__(self, op, expr):
+        self.op = op
+        self.expr = expr
+
+    def __repr__(self):
+        return f"AstUnOp(op={self.op}, expr={self.expr})"
+
 class Parser(object):
 
     def __init__(self, tokens):
@@ -289,7 +300,7 @@ class Parser(object):
 
     def get_expr(self):
         expr = self.get_term()
-        while self.token().matches([Token.ADD, Token.SUB]):
+        while self.token().matches([Token.ADD, Token.SUB, Token.OR]):
             op = self.token().name
             self.advance()
             expr = AstBinOp(op=op, left=expr, right=self.get_term())
@@ -297,7 +308,7 @@ class Parser(object):
 
     def get_term(self):
         term = self.get_factor()
-        while self.token().matches([Token.MUL, Token.DIV, Token.MOD]):
+        while self.token().matches([Token.MUL, Token.DIV, Token.MOD, Token.AND]):
             op = self.token().name
             self.advance()
             term = AstBinOp(op=op, left=term, right=self.get_factor())
@@ -309,8 +320,13 @@ class Parser(object):
             factor = self.get_expr()
             self.match(Token.RPAREN)
             return factor
+        elif self.token().matches(Token.KEYWORD) and self.token().value == "not":
+            self.match(Token.KEYWORD)
+            return AstUnOp(op="NOT", expr=self.get_factor())
         elif self.token().matches(Token.NUM):
             return AstLiteral(value=self.match(Token.NUM).value, type="int")
+        elif self.token().matches(Token.BOOL):
+            return AstLiteral(value=self.match(Token.BOOL).value, type="bool")
         elif self.token().matches(Token.ID):
             return AstVariable(self.match(Token.ID).value)
         else:
@@ -330,4 +346,5 @@ def parse_expr(expr):
     parser = Parser(tokens)
     return parser.get_expr()
 
-expr = parse_expr("(15 + 34) * 12")
+expr = parse_expr("(not (True or False)) and False")
+#  expr = parse_expr("(15 + 34) * 12")
