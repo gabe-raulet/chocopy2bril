@@ -284,8 +284,9 @@ class AstAssign(Ast):
 
     def get_instrs(self, func):
         instrs = self.expr.get_instrs(func)
-        dest = instrs[-1]["dest"]
-        instrs.append({"dest" : dest, "op" : "id", "type" : self.expr.get_type(), "args" : [dest]})
+        args = [instrs[-1]["dest"]]
+        type = self.expr.get_type(func.table)
+        instrs.append({"dest" : self.target.name, "op" : "id", "type" : type, "args" : args})
         return instrs
 
 class AstBinOp(Ast):
@@ -458,12 +459,14 @@ class Parser(object):
             lhs = AstBinOp(op=op, left=lhs, right=self.get_expr(prec+1))
         return lhs
 
-#  if __name__ == "__main__":
-    #  tokens = list(lex_text(sys.stdin.read()))
+if __name__ == "__main__":
+    tokens = list(lex_text(sys.stdin.read()))
+    parser = Parser(tokens)
+    json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-prog = open("prog1.py").read()
-tokens = list(lex_text(prog))
-parser = Parser(tokens)
-p = parser.parse()
-json.dump(p.get_bril(), sys.stdout, indent=4)
+#  prog = open("prog2.py").read()
+#  tokens = list(lex_text(prog))
+#  parser = Parser(tokens)
+#  p = parser.parse()
+#  json.dump(p.get_bril(), sys.stdout, indent=4)
 
