@@ -44,7 +44,7 @@ class Token(object):
                    "EQ" : 5,  "NE" : 5,  "LT" : 5, "GT" : 5, "LE" : 5, "GE" : 5,
                   "ADD" : 6, "SUB" : 6,
                   "MUL" : 7, "DIV" : 7, "MOD" : 7,
-                  "USUB" : 8}
+                 "USUB" : 8}
 
     @staticmethod
     def get_precedence(op):
@@ -184,6 +184,23 @@ class SymbolTable(object):
     def get_id_type(self, name):
         return self.table[name][1]
 
+    def get_instrs(self):
+        instrs = []
+        for name in self.table:
+            value, type = self.table[name]
+            instrs.append({"dest" : name, "op" : "const", "value" : value, "type" : type})
+        return instrs
+
+class Program(object):
+
+    def __init__(self, table, body):
+        self.table = table
+        self.body = body
+
+    def get_bril(self):
+        main_func = Function("main", self.table, self.body)
+        return {"functions" : [main_func.get_func()]}
+
 class Function(object):
 
     def __init__(self, name, table, body):
@@ -197,11 +214,8 @@ class Function(object):
         self.reg += 1
         return reg
 
-class Program(object):
-
-    def __init__(self, table, body):
-        self.table = table
-        self.body = body
+    def get_func(self):
+        return {"name" : self.name, "instrs" : self.table.get_instrs()}
 
 class Ast(object):
     pass
@@ -429,5 +443,5 @@ prog = open("prog1.py").read()
 tokens = list(lex_text(prog))
 parser = Parser(tokens)
 p = parser.parse()
+json.dump(p.get_bril(), sys.stdout, indent=4)
 
-#  json.dump(p.gencode(), sys.stdout, indent=4)
