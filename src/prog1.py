@@ -5,3 +5,6 @@ var_the_truth: bool = True
 
 print(var1)
 print(var2)
+print(5)
+print(var_the_truth)
+print(True)

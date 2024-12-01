@@ -263,6 +263,10 @@ class AstLiteral(Ast):
     def get_type(self, table):
         return self.type
 
+    def get_instrs(self, func):
+        dest = func.next_reg()
+        return [{"dest" : dest, "op" : "const", "type" : self.get_type(func.table), "value" : self.value}]
+
     def evaluate(self):
         return self.value
 
