@@ -184,6 +184,25 @@ class SymbolTable(object):
     def get_id_type(self, name):
         return self.table[name][1]
 
+class Function(object):
+
+    def __init__(self, name, table, body):
+        self.name = name
+        self.table = table
+        self.body = body
+        self.reg = 0
+
+    def next_reg(self):
+        reg = f"r{self.reg}"
+        self.reg += 1
+        return reg
+
+class Program(object):
+
+    def __init__(self, table, body):
+        self.table = table
+        self.body = body
+
 class Ast(object):
     pass
 
@@ -344,7 +363,7 @@ class Parser(object):
     def parse(self):
         table = self.get_table()
         stmts = self.get_stmts()
-        return table, stmts
+        return Program(table, stmts)
 
     def get_stmts(self):
         stmts = []
@@ -406,38 +425,9 @@ class Parser(object):
 #  if __name__ == "__main__":
     #  tokens = list(lex_text(sys.stdin.read()))
 
-#  prog = open("prog1.py").read()
-#  tokens = list(lex_text(prog))
-#  parser = Parser(tokens)
-#  table, stmts = parser.parse()
+prog = open("prog1.py").read()
+tokens = list(lex_text(prog))
+parser = Parser(tokens)
+p = parser.parse()
 
-def parse_expr(expr):
-    expr += "\n"
-    tokens = list(lex_text(expr))
-    parser = Parser(tokens)
-    return parser.get_expr()
-
-def my_eval(expr):
-    return parse_expr(expr).evaluate()
-
-#  expr1 = parse_expr("(1 + 2) * 3")
-#  expr2 = parse_expr("1 + 2 * 3")
-#  expr3 = parse_expr("1 + (2 * 3)")
-#  expr4 = parse_expr("(2 + 3) * (5 + 2)")
-#  expr5 = parse_expr("(2 * 3) + (5 * 2)")
-#  expr6 = parse_expr("535 - 13 * (((2 + 3) * (5 + 2)) - 1)")
-#  expr7 = parse_expr("1 + 2 + 3 * 4 + 5 + 6 // 7 - 4 - 3")
-
-#  expr8 = parse_expr("not True")
-#  expr9 = parse_expr("(not (3 < 4)) == False")
-#  expr10 = parse_expr("-(4 + 3)")
-
-#  table = SymbolTable()
-#  table.add_id("a", 4, "int")
-#  table.add_id("b", 3, "int")
-#  table.add_id("c", 2, "int")
-#  table.add_id("d", False, "bool")
-
-#  expr = parse_expr("a + b - c")
-#  expr = parse_expr("(d == True) and (a == b + 1)")
-#  expr = parse_expr("d <= d")
+#  json.dump(p.gencode(), sys.stdout, indent=4)
