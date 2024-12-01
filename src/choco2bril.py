@@ -154,12 +154,23 @@ class Token(object):
         return None
 
 def lex_text(text):
+    stack = [0]
     while True:
         s = re.search(r"[ \t]*(#.*)?\n", text)
         if not s: break
         line = text[:s.start()]
         text = text[s.end():]
         if not line: continue
+        front = re.match(r"[ ]*", line)
+        l = len(front.group())
+        if l > stack[-1]:
+            stack.append(l)
+            yield Token("INDENT")
+        elif l < stack[-1]:
+            while l < stack[-1]:
+                stack.pop()
+                yield Token("DEDENT")
+            assert l == stack[-1]
         result = Token.match(line)
         while result:
             token, line = result
@@ -529,7 +540,7 @@ if __name__ == "__main__":
     parser = Parser(tokens)
     json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-#  prog = open("prog5.py").read()
+#  text = open("prog6.py").read()
 #  tokens = list(lex_text(prog))
 #  parser = Parser(tokens)
 #  p = parser.parse()
