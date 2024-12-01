@@ -204,20 +204,20 @@ class SymbolTable(object):
 
 class Program(object):
 
-    def __init__(self, table, body):
+    def __init__(self, table, stmts):
         self.table = table
-        self.body = body
+        self.stmts = stmts
 
     def get_bril(self):
-        main_func = Function("main", self.table, self.body)
+        main_func = Function("main", self.table, self.stmts)
         return {"functions" : [main_func.get_func()]}
 
 class Function(object):
 
-    def __init__(self, name, table, body):
+    def __init__(self, name, table, stmts):
         self.name = name
         self.table = table
-        self.body = body
+        self.stmts = stmts
         self.reg = 0
 
     def next_reg(self):
@@ -227,7 +227,7 @@ class Function(object):
 
     def get_func(self):
         instrs = self.table.get_instrs()
-        for stmt in self.body: instrs += stmt.get_instrs(self)
+        for stmt in self.stmts: instrs += stmt.get_instrs(self)
         return {"name" : self.name, "instrs" : instrs}
 
 class Ast(object):
