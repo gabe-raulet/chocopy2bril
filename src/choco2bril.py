@@ -282,6 +282,12 @@ class AstAssign(Ast):
     def get_type(self, table):
         return None
 
+    def get_instrs(self, func):
+        instrs = self.expr.get_instrs(func)
+        dest = instrs[-1]["dest"]
+        instrs.append({"dest" : dest, "op" : "id", "type" : self.expr.get_type(), "args" : [dest]})
+        return instrs
+
 class AstBinOp(Ast):
 
     def __init__(self, op, left, right):
