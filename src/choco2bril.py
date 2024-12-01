@@ -215,7 +215,9 @@ class Function(object):
         return reg
 
     def get_func(self):
-        return {"name" : self.name, "instrs" : self.table.get_instrs()}
+        instrs = self.table.get_instrs()
+        for stmt in self.body: instrs += stmt.get_instrs(self)
+        return {"name" : self.name, "instrs" : instrs}
 
 class Ast(object):
     pass
@@ -228,6 +230,12 @@ class AstPrint(Ast):
     def __repr__(self):
         return f"AstPrint(expr={self.expr})"
 
+    def get_instrs(self, func):
+        instrs = self.expr.get_instrs(func)
+        dest = instrs[-1]["dest"]
+        instrs.append({"op" : "print", "args" : [dest]})
+        return instrs
+
 class AstVariable(Ast):
 
     def __init__(self, name):
@@ -238,6 +246,10 @@ class AstVariable(Ast):
 
     def get_type(self, table):
         return table.get_id_type(self.name)
+
+    def get_instrs(self, func):
+        dest = func.next_reg()
+        return [{"dest" : dest, "op" : "id", "type" : self.get_type(func.table), "args" : [self.name]}]
 
 class AstLiteral(Ast):
 
