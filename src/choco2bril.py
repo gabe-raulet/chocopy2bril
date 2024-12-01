@@ -104,13 +104,6 @@ class Token(object):
                 return True
         return False
 
-    def to_dict(self):
-        return {"name" : self.name, "value" : self.value}
-
-    @classmethod
-    def from_dict(cls, token_dict):
-        return cls(token_dict["name"], token_dict["value"])
-
     @classmethod
     def match(cls, text):
 
