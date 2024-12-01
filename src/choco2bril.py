@@ -388,6 +388,27 @@ class AstUnOp(Ast):
     def __repr__(self):
         return f"AstUnOp(op={self.op}, expr={self.expr})"
 
+    def get_type(self, table):
+        return self.expr.get_type(table)
+
+    def get_instrs(self, func):
+        instrs = self.expr.get_instrs(func)
+        args = [instrs[-1]["dest"]]
+        type = self.get_type(func.table)
+        op = self.op.lower()
+        dest = func.next_reg()
+        if op == "not":
+            assert type == "bool"
+            instrs.append({"dest" : dest, "op" : "not", "type" : "bool", "args" : args})
+        elif op == "usub":
+            assert type == "int"
+            tmp = func.next_reg()
+            instrs.append({"dest" : tmp, "op" : "const", "type" : "int", "value" : -1})
+            instrs.append({"dest" : dest, "op" : "mul", "type" : "int", "args" : [tmp, args[0]]})
+        else:
+            raise Exception("error")
+        return instrs
+
     def evaluate(self):
         if self.op == "NOT": return not self.expr.evaluate()
         elif self.op == "USUB": return -1 * self.expr.evaluate()
@@ -508,7 +529,7 @@ if __name__ == "__main__":
     parser = Parser(tokens)
     json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-#  prog = open("prog3.py").read()
+#  prog = open("prog5.py").read()
 #  tokens = list(lex_text(prog))
 #  parser = Parser(tokens)
 #  p = parser.parse()
