@@ -299,6 +299,49 @@ class AstBinOp(Ast):
     def __repr__(self):
         return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
 
+    @staticmethod
+    def traverse(node, func, instrs, stack):
+        if isinstance(node, AstBinOp):
+            AstBinOp.traverse(node.left, func, instrs, stack)
+            AstBinOp.traverse(node.right, func, instrs, stack)
+            rhs = stack.pop()
+            lhs = stack.pop()
+            dest = func.next_reg()
+            op = node.op.lower()
+            ltype = node.left.get_type(func.table)
+            rtype = node.right.get_type(func.table)
+            if op == "mod":
+                assert ltype == "int" and rtype == "int"
+                instrs.append({"dest" : dest, "op" : "div", "type" : "int", "args" : [lhs, rhs]})
+                instrs.append({"dest" : dest, "op" : "mul", "type" : "int", "args" : [dest, rhs]})
+                instrs.append({"dest" : dest, "op" : "sub", "type" : "int", "args" : [lhs, dest]})
+            elif op in {"lt", "gt", "le", "ge"}:
+                assert ltype == "int" and rtype == "int"
+                instrs.append({"dest" : dest, "op" : op, "type" : "bool", "args" : [lhs, rhs]})
+            elif op in {"eq", "ne"}:
+                assert ltype == "int" and rtype == "int" # TODO: implement version that works for bools as well
+                instrs.append({"dest" : dest, "op" : "eq", "type" : "bool", "args" : [lhs, rhs]})
+                if op == "ne":
+                    instrs.append({"dest" : dest, "op" : "not", "type" : "bool", "args" : [dest]})
+            elif op  in {"or", "and"}:
+                assert ltype == "bool" and rtype == "bool"
+                instrs.append({"dest" : dest, "op" : op, "type" : "bool", "args" : [lhs, rhs]})
+            elif op in {"add", "sub", "mul", "div"}:
+                assert ltype == "int" and rtype == "int"
+                instrs.append({"dest" : dest, "op" : op, "type" : "int", "args" : [lhs, rhs]})
+            else:
+                raise Exception("error")
+            stack.append(dest)
+        else:
+            instrs += node.get_instrs(func)
+            dest = instrs[-1]["dest"]
+            stack.append(dest)
+
+    def get_instrs(self, func):
+        instrs, stack = [], []
+        AstBinOp.traverse(self, func, instrs, stack)
+        return instrs
+
     def get_type(self, table):
         lhs = self.left.get_type(table)
         rhs = self.right.get_type(table)
@@ -316,6 +359,7 @@ class AstBinOp(Ast):
             return "bool"
         else:
             raise Exception("Type error")
+
 
     def evaluate(self):
         lhs = self.left.evaluate()
@@ -464,7 +508,7 @@ if __name__ == "__main__":
     parser = Parser(tokens)
     json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-#  prog = open("prog2.py").read()
+#  prog = open("prog3.py").read()
 #  tokens = list(lex_text(prog))
 #  parser = Parser(tokens)
 #  p = parser.parse()
