@@ -489,6 +489,16 @@ class Parser(object):
         stmts = self.get_stmts()
         return Program(table, stmts)
 
+    def matches_print(self):
+        return self.not_done() and self.token().matches(Token.KEYWORD) and self.token().value == "print"
+
+    def get_print(self):
+        self.match(Token.KEYWORD)
+        self.match(Token.LPAREN)
+        stmt = AstPrint(expr=self.get_expr())
+        self.match(Token.RPAREN)
+        return stmt
+
     def get_stmts(self):
         stmts = []
         while self.token(): stmts.append(self.get_stmt())
@@ -496,14 +506,8 @@ class Parser(object):
 
     def get_stmt(self):
         stmt = None
-        if self.token().matches(Token.KEYWORD):
-            if self.token().value == "print":
-                self.match(Token.KEYWORD)
-                self.match(Token.LPAREN)
-                stmt = AstPrint(expr=self.get_expr())
-                self.match(Token.RPAREN)
-            else:
-                self.error()
+        if self.matches_print():
+            stmt = self.get_print()
         elif self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN):
             target = AstVariable(name=self.match(Token.ID).value)
             self.match(Token.ASSIGN)
