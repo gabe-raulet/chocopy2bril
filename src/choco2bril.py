@@ -69,6 +69,8 @@ class Token(object):
     RPAREN = TokenPattern.exact("RPAREN", ")")
     COLON  = TokenPattern.exact("COLON", ":")
     ASSIGN = TokenPattern.exact("ASSIGN", "=")
+    ARROW  = TokenPattern.exact("ARROW", "->")
+    COMMA  = TokenPattern.exact("COMMA", ",")
 
     KEYWORD = TokenPattern.regexp("KEYWORD", r"print")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
@@ -78,7 +80,7 @@ class Token(object):
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
 
     OP_GROUP = [ADD, SUB, MUL, DIV, MOD, AND, OR, EQ, NE, LE, GE, LT, GT, NOT]
-    DELIM_GROUP = [LPAREN, RPAREN, COLON, ASSIGN]
+    DELIM_GROUP = [LPAREN, RPAREN, COLON, ASSIGN, ARROW, COMMA]
     EXACT_GROUP = [OP_GROUP, DELIM_GROUP]
 
     OP = TokenPattern.group("OP", OP_GROUP)
@@ -448,10 +450,23 @@ class Parser(object):
     def match_newline(self):
         self.match("NEWLINE")
 
-    def get_var_def(self):
+    def match_indent(self):
+        self.match("INDENT")
+
+    def match_dedent(self):
+        self.match("DEDENT")
+
+    def matches_typed_var(self):
+        return self.token() is not None and self.token().matches(Token.ID) and self.token(1).matches(Token.COLON)
+
+    def get_typed_var(self):
         name = self.match(Token.ID).value
         self.match(Token.COLON)
         type = self.match(Token.TYPE).value
+        return name, type
+
+    def get_var_def(self):
+        name, type = self.get_typed_var()
         self.match(Token.ASSIGN)
         if type == "int": value = self.match(Token.NUM).value
         elif type == "bool": value = self.match(Token.BOOL).value
@@ -461,7 +476,7 @@ class Parser(object):
 
     def get_table(self):
         table = SymbolTable()
-        while self.token() and self.token().matches(Token.ID) and self.token(1).matches(Token.COLON):
+        while self.matches_typed_var():
             name, value, type = self.get_var_def()
             table.add_id(name, value, type)
         return table
