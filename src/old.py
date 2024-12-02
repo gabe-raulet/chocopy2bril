@@ -72,7 +72,7 @@ class Token(object):
     ARROW  = TokenPattern.exact("ARROW", "->")
     COMMA  = TokenPattern.exact("COMMA", ",")
 
-    KEYWORD = TokenPattern.regexp("KEYWORD", r"print")
+    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|def")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
     BOOL    = TokenPattern.regexp("BOOL", r"True|False", process=lambda v: {"True" : True, "False" : False}[v])
 
@@ -114,17 +114,17 @@ class Token(object):
 
         text = text.lstrip()
 
-        if cls.OP.match(text):
-            for op in cls.OP_GROUP:
-                if op.match(text):
-                    value, text = op.lex_and_split(text)
-                    return Token(op.name, value), text
-
         if cls.DELIM.match(text):
             for delim in cls.DELIM_GROUP:
                 if delim.match(text):
                     value, text = delim.lex_and_split(text)
                     return Token(delim.name, value), text
+
+        if cls.OP.match(text):
+            for op in cls.OP_GROUP:
+                if op.match(text):
+                    value, text = op.lex_and_split(text)
+                    return Token(op.name, value), text
 
         if cls.BOOL.match(text):
             value, text = cls.BOOL.lex_and_split(text)
@@ -456,12 +456,6 @@ class Parser(object):
     def match_dedent(self):
         self.match("DEDENT")
 
-    def not_done(self):
-        return self.token() is not None
-
-    def matches_typed_var(self):
-        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.COLON)
-
     def get_typed_var(self):
         name = self.match(Token.ID).value
         self.match(Token.COLON)
@@ -479,7 +473,7 @@ class Parser(object):
 
     def get_table(self):
         table = SymbolTable()
-        while self.matches_typed_var():
+        while self.token() and self.token().matches(Token.ID) and self.token(1).matches(Token.COLON):
             name, value, type = self.get_var_def()
             table.add_id(name, value, type)
         return table
@@ -489,24 +483,32 @@ class Parser(object):
         stmts = self.get_stmts()
         return Program(table, stmts)
 
-    def matches_keyword(self, word):
-        return self.not_done() and self.token().matches(Token.KEYWORD) and self.token().value == word
+    #  def get_sig(self):
+        #  sig = {}
+        #  if self.token().matches(Token.RPAREN): return sig
+        #  name, type = self.get_typed_var()
+        #  sig[name] = type
+        #  while self.token().matches(Token.COMMA):
+            #  self.match(Token.COMMA)
+            #  name, type = self.get_typed_var()
+            #  sig[name] = type
+        #  return sig
 
-    def get_print(self):
-        self.match(Token.KEYWORD)
-        self.match(Token.LPAREN)
-        stmt = AstPrint(expr=self.get_expr())
-        self.match(Token.RPAREN)
-        return stmt
-
-    def matches_assign(self):
-        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN)
-
-    def get_assign(self):
-        target = AstVariable(name=self.match(Token.ID).value)
-        self.match(Token.ASSIGN)
-        stmt = AstAssign(target=target, expr=self.get_expr())
-        return stmt
+    #  def get_func(self):
+        #  assert self.token().matches(Token.KEYWORD) and self.token().value == "def"
+        #  self.match(Token.KEYWORD)
+        #  name = self.match(Token.ID).value
+        #  self.match(Token.LPAREN)
+        #  func_sig = self.get_sig()
+        #  self.match(Token.RPAREN)
+        #  ret_type = None
+        #  if self.token().matches(Token.ARROW):
+            #  self.match(Token.ARROW)
+            #  ret_type = self.match(Token.TYPE).value
+        #  self.match(Token.COLON)
+        #  self.match_newline()
+        #  self.match_indent()
+        #  body = self.get_body()
 
     def get_stmts(self):
         stmts = []
@@ -515,10 +517,18 @@ class Parser(object):
 
     def get_stmt(self):
         stmt = None
-        if self.matches_keyword("print"):
-            stmt = self.get_print()
-        elif self.matches_assign():
-            stmt = self.get_assign()
+        if self.token().matches(Token.KEYWORD):
+            if self.token().value == "print":
+                self.match(Token.KEYWORD)
+                self.match(Token.LPAREN)
+                stmt = AstPrint(expr=self.get_expr())
+                self.match(Token.RPAREN)
+            else:
+                self.error()
+        elif self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN):
+            target = AstVariable(name=self.match(Token.ID).value)
+            self.match(Token.ASSIGN)
+            stmt = AstAssign(target=target, expr=self.get_expr())
         else:
             self.error()
         self.match_newline()
