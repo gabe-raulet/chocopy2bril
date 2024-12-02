@@ -80,7 +80,7 @@ class Token(object):
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
 
     GROUP1 = [EQ, NE, LE, GE, ARROW]
-    GROUP2 = [LT, GT, ADD, SUB, MUL, DIV, MOD, AND, OR, LPAREN, RPAREN, COLON, ASSIGN, COMMA]
+    GROUP2 = [LT, GT, ADD, SUB, MUL, DIV, MOD, NOT, AND, OR, LPAREN, RPAREN, COLON, ASSIGN, COMMA]
 
     G1 = TokenPattern.group("G1", GROUP1)
     G2 = TokenPattern.group("G2", GROUP2)
@@ -519,17 +519,16 @@ class Parser(object):
         return table
 
     def parse(self):
-        table = {}
-        funcs = []
+        table, funcs = {}, {}
         while self.token():
             if self.matches_func_def():
-                funcs.append(self.get_func_def())
+                func = self.get_func_def()
+                funcs[func.name] = func
             elif self.matches_typed_var():
                 name, value, type = self.get_var_def()
                 table[name] = {"value" : value, "type" : type}
             else:
                 break
-        #  table = self.get_table()
         stmts = self.get_stmts()
         return Program(table, stmts, funcs)
 
@@ -607,14 +606,11 @@ class Parser(object):
             lhs = AstBinOp(op=op, left=lhs, right=self.get_expr(prec+1))
         return lhs
 
-#  if __name__ == "__main__":
-    #  tokens = list(lex_text(sys.stdin.read()))
-    #  parser = Parser(tokens)
-    #  json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
+if __name__ == "__main__":
+    tokens = list(lex_text(sys.stdin.read()))
+    parser = Parser(tokens)
+    json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-text = open("prog7.py").read()
-tokens = list(lex_text(text))
-parser = Parser(tokens)
-#  p = parser.parse()
-#  json.dump(p.get_bril(), sys.stdout, indent=4)
-
+#  text = open("prog7.py").read()
+#  tokens = list(lex_text(text))
+#  parser = Parser(tokens)
