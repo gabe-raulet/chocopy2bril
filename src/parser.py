@@ -1,5 +1,5 @@
 from lexer import Token
-from code import Body, Program, Function
+from codegen import Body, Program, Function
 from myast import *
 
 class Parser(object):
