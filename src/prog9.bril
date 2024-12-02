@@ -1,0 +1,25 @@
+@example(a: int, b: int): int {
+    var1: int = const 0;
+    r0: int = id a;
+    r1: int = id b;
+    r2: int = add r0 r1;
+    var1: int = id r2;
+    r3: int = id var1;
+    ret r3;
+}
+
+@main {
+    var1: int = const 15;
+    r0: int = id var1;
+    print r0;
+
+    r1: int = const 12;
+    r2: int = id var1;
+    r3: int = const 3;
+    r4: int = mul r2 r3;
+    r5: int = call @example r1 r4;
+    var1: int = id r5;
+
+    r6: int = id var1;
+    print r6;
+}

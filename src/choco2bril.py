@@ -492,20 +492,17 @@ class Parser(object):
         return self.not_done() and self.matches_keyword("def") and self.token(1).matches(Token.ID)
 
     def get_func_sig(self):
-        sig = {}
-        name, type = self.get_typed_var()
-        sig[name] = type
+        sig = [self.get_typed_var()]
         while self.token().matches(Token.COMMA):
             self.match(Token.COMMA)
-            name, type = self.get_typed_var()
-            sig[name] = type
+            sig.append(self.get_typed_var())
         return sig
 
     def get_func_def(self):
         self.match(Token.KEYWORD)
         name = self.match(Token.ID).value
         self.match(Token.LPAREN)
-        sig = {}
+        sig = []
         if self.matches_typed_var(): sig = self.get_func_sig()
         self.match(Token.RPAREN)
         ret_type = None
@@ -638,12 +635,12 @@ class Parser(object):
             lhs = AstBinOp(op=op, left=lhs, right=self.get_expr(prec+1))
         return lhs
 
-#  if __name__ == "__main__":
-    #  tokens = list(lex_text(sys.stdin.read()))
-    #  parser = Parser(tokens)
-    #  json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
+if __name__ == "__main__":
+    tokens = list(lex_text(sys.stdin.read()))
+    parser = Parser(tokens)
+    json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-text = open("prog8.py").read()
-tokens = list(lex_text(text))
-parser = Parser(tokens)
-prog = parser.parse()
+#  text = open("prog9.py").read()
+#  tokens = list(lex_text(text))
+#  parser = Parser(tokens)
+#  prog = parser.parse()
