@@ -173,30 +173,6 @@ def lex_text(text):
             result = Token.match(line)
         yield Token("NEWLINE")
 
-class SymbolTable(object):
-
-    def __init__(self):
-        self.table = {}
-
-    def __repr__(self):
-        return f"SymbolTable({self.table})"
-
-    def add_id(self, name, value, type):
-        self.table[name] = (value, type)
-
-    def get_id_init(self, name):
-        return self.table[name][0]
-
-    def get_id_type(self, name):
-        return self.table[name][1]
-
-    def get_instrs(self):
-        instrs = []
-        for name in self.table:
-            value, type = self.table[name]
-            instrs.append({"dest" : name, "op" : "const", "value" : value, "type" : type})
-        return instrs
-
 class Program(object):
 
     def __init__(self, table, stmts):
@@ -221,8 +197,12 @@ class Function(object):
         return reg
 
     def get_func(self):
-        instrs = self.table.get_instrs()
-        for stmt in self.stmts: instrs += stmt.get_instrs(self)
+        instrs = []
+        for name in self.table:
+            info = self.table[name]
+            instrs.append({"dest" : name, "op" : "const", "value" : info["value"], "type" : info["type"]})
+        for stmt in self.stmts:
+            instrs += stmt.get_instrs(self)
         return {"name" : self.name, "instrs" : instrs}
 
 class Ast(object):
@@ -251,7 +231,7 @@ class AstVariable(Ast):
         return f"AstVariable(name='{self.name}')"
 
     def get_type(self, table):
-        return table.get_id_type(self.name)
+        return table[self.name]["type"]
 
     def get_instrs(self, func):
         dest = func.next_reg()
@@ -478,10 +458,10 @@ class Parser(object):
         return name, value, type
 
     def get_table(self):
-        table = SymbolTable()
+        table = {}
         while self.matches_typed_var():
             name, value, type = self.get_var_def()
-            table.add_id(name, value, type)
+            table[name] = {"value" : value, "type" : type}
         return table
 
     def parse(self):
