@@ -210,6 +210,9 @@ class Function(Body):
         self.sig = sig
         self.ret_type = ret_type
 
+    def __repr__(self):
+        return f"Function(name={self.name}, sig={self.sig}, ret_type={self.ret_type})"
+
 class Ast(object):
     pass
 
@@ -581,7 +584,7 @@ class Parser(object):
         elif self.matches_assign():
             stmt = self.get_assign()
         else:
-            self.error()
+            stmt = self.get_expr()
         self.match_newline()
         return stmt
 
@@ -640,7 +643,7 @@ class Parser(object):
     #  parser = Parser(tokens)
     #  json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-text = open("prog7.py").read()
+text = open("prog8.py").read()
 tokens = list(lex_text(text))
 parser = Parser(tokens)
 prog = parser.parse()
