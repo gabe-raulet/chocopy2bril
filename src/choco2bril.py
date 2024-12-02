@@ -253,6 +253,18 @@ class AstReturn(Ast):
     def get_type(self, table):
         return None
 
+class AstCall(Ast):
+
+    def __init__(self, name, params):
+        self.name = name
+        self.params = params
+
+    def __repr__(self):
+        return f"AstCall(name={self.name}, params={self.params})"
+
+    def get_type(self, table):
+        return None
+
 class AstLiteral(Ast):
 
     def __init__(self, value, type):
@@ -573,8 +585,25 @@ class Parser(object):
         self.match_newline()
         return stmt
 
+    def matches_func_call(self):
+        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.LPAREN)
+
+    def get_func_call(self):
+        name = self.match(Token.ID).value
+        self.match(Token.LPAREN)
+        params = []
+        if not self.token().matches(Token.RPAREN):
+            params.append(self.get_expr())
+            while self.token().matches(Token.COMMA):
+                self.match(Token.COMMA)
+                params.append(self.get_expr())
+        self.match(Token.RPAREN)
+        return AstCall(name, params)
+
     def get_atom(self):
-        if self.token().matches(Token.LPAREN):
+        if self.matches_func_call():
+            return self.get_func_call()
+        elif self.token().matches(Token.LPAREN):
             self.match(Token.LPAREN)
             expr = self.get_expr()
             self.match(Token.RPAREN)
@@ -606,11 +635,12 @@ class Parser(object):
             lhs = AstBinOp(op=op, left=lhs, right=self.get_expr(prec+1))
         return lhs
 
-if __name__ == "__main__":
-    tokens = list(lex_text(sys.stdin.read()))
-    parser = Parser(tokens)
-    json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
+#  if __name__ == "__main__":
+    #  tokens = list(lex_text(sys.stdin.read()))
+    #  parser = Parser(tokens)
+    #  json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-#  text = open("prog7.py").read()
-#  tokens = list(lex_text(text))
-#  parser = Parser(tokens)
+text = open("prog7.py").read()
+tokens = list(lex_text(text))
+parser = Parser(tokens)
+prog = parser.parse()
