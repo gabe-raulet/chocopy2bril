@@ -499,6 +499,15 @@ class Parser(object):
         self.match(Token.RPAREN)
         return stmt
 
+    def matches_assign(self):
+        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN)
+
+    def get_assign(self):
+        target = AstVariable(name=self.match(Token.ID).value)
+        self.match(Token.ASSIGN)
+        stmt = AstAssign(target=target, expr=self.get_expr())
+        return stmt
+
     def get_stmts(self):
         stmts = []
         while self.token(): stmts.append(self.get_stmt())
@@ -508,10 +517,8 @@ class Parser(object):
         stmt = None
         if self.matches_print():
             stmt = self.get_print()
-        elif self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN):
-            target = AstVariable(name=self.match(Token.ID).value)
-            self.match(Token.ASSIGN)
-            stmt = AstAssign(target=target, expr=self.get_expr())
+        elif self.matches_assign():
+            stmt = self.get_assign()
         else:
             self.error()
         self.match_newline()
