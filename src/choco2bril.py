@@ -72,19 +72,18 @@ class Token(object):
     ARROW  = TokenPattern.exact("ARROW", "->")
     COMMA  = TokenPattern.exact("COMMA", ",")
 
-    KEYWORD = TokenPattern.regexp("KEYWORD", r"print")
+    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|def|return")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
     BOOL    = TokenPattern.regexp("BOOL", r"True|False", process=lambda v: {"True" : True, "False" : False}[v])
 
     ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
 
-    OP_GROUP = [ADD, SUB, MUL, DIV, MOD, AND, OR, EQ, NE, LE, GE, LT, GT, NOT]
-    DELIM_GROUP = [LPAREN, RPAREN, COLON, ASSIGN, ARROW, COMMA]
-    EXACT_GROUP = [OP_GROUP, DELIM_GROUP]
+    GROUP1 = [EQ, NE, LE, GE, ARROW]
+    GROUP2 = [LT, GT, ADD, SUB, MUL, DIV, MOD, AND, OR, LPAREN, RPAREN, COLON, ASSIGN, COMMA]
 
-    OP = TokenPattern.group("OP", OP_GROUP)
-    DELIM = TokenPattern.group("DELIM", DELIM_GROUP)
+    G1 = TokenPattern.group("G1", GROUP1)
+    G2 = TokenPattern.group("G2", GROUP2)
 
     def __init__(self, name, value=None):
         self.name = name
@@ -114,17 +113,17 @@ class Token(object):
 
         text = text.lstrip()
 
-        if cls.OP.match(text):
-            for op in cls.OP_GROUP:
+        if cls.G1.match(text):
+            for op in cls.GROUP1:
                 if op.match(text):
                     value, text = op.lex_and_split(text)
                     return Token(op.name, value), text
 
-        if cls.DELIM.match(text):
-            for delim in cls.DELIM_GROUP:
-                if delim.match(text):
-                    value, text = delim.lex_and_split(text)
-                    return Token(delim.name, value), text
+        if cls.G2.match(text):
+            for op in cls.GROUP2:
+                if op.match(text):
+                    value, text = op.lex_and_split(text)
+                    return Token(op.name, value), text
 
         if cls.BOOL.match(text):
             value, text = cls.BOOL.lex_and_split(text)
@@ -195,12 +194,21 @@ class Body(object):
 
 class Program(Body):
 
-    def __init__(self, table, stmts):
+    def __init__(self, table, stmts, funcs):
         super().__init__(table, stmts)
+        self.funcs = funcs
 
     def get_bril(self):
         main = {"name" : "main", "instrs" : self.get_instrs()}
         return {"functions" : [main]}
+
+class Function(Body):
+
+    def __init__(self, table, stmts, name, sig, ret_type):
+        super().__init__(table, stmts)
+        self.name = name
+        self.sig = sig
+        self.ret_type = ret_type
 
 class Ast(object):
     pass
@@ -233,6 +241,17 @@ class AstVariable(Ast):
     def get_instrs(self, body):
         dest = body.next_reg()
         return [{"dest" : dest, "op" : "id", "type" : self.get_type(body.table), "args" : [self.name]}]
+
+class AstReturn(Ast):
+
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"AstReturn(expr={self.expr})"
+
+    def get_type(self, table):
+        return None
 
 class AstLiteral(Ast):
 
@@ -454,6 +473,44 @@ class Parser(object):
         self.match_newline()
         return name, value, type
 
+    def matches_func_def(self):
+        return self.not_done() and self.matches_keyword("def") and self.token(1).matches(Token.ID)
+
+    def get_func_sig(self):
+        sig = {}
+        name, type = self.get_typed_var()
+        sig[name] = type
+        while self.token().matches(Token.COMMA):
+            self.match(Token.COMMA)
+            name, type = self.get_typed_var()
+            sig[name] = type
+        return sig
+
+    def get_func_def(self):
+        self.match(Token.KEYWORD)
+        name = self.match(Token.ID).value
+        self.match(Token.LPAREN)
+        sig = {}
+        if self.matches_typed_var(): sig = self.get_func_sig()
+        self.match(Token.RPAREN)
+        ret_type = None
+        if self.token().matches(Token.ARROW):
+            self.match(Token.ARROW)
+            ret_type = self.match(Token.TYPE).value
+        self.match(Token.COLON)
+        self.match_newline()
+        self.match_indent()
+        table, stmts = self.get_func_body()
+        self.match_dedent()
+        return Function(table, stmts, name, sig, ret_type)
+
+    def get_func_body(self):
+        func_table = self.get_table()
+        func_stmts = []
+        while not self.token().matches("DEDENT"):
+            func_stmts.append(self.get_stmt())
+        return func_table, func_stmts
+
     def get_table(self):
         table = {}
         while self.matches_typed_var():
@@ -462,9 +519,19 @@ class Parser(object):
         return table
 
     def parse(self):
-        table = self.get_table()
+        table = {}
+        funcs = []
+        while self.token():
+            if self.matches_func_def():
+                funcs.append(self.get_func_def())
+            elif self.matches_typed_var():
+                name, value, type = self.get_var_def()
+                table[name] = {"value" : value, "type" : type}
+            else:
+                break
+        #  table = self.get_table()
         stmts = self.get_stmts()
-        return Program(table, stmts)
+        return Program(table, stmts, funcs)
 
     def matches_keyword(self, word):
         return self.not_done() and self.token().matches(Token.KEYWORD) and self.token().value == word
@@ -475,6 +542,10 @@ class Parser(object):
         stmt = AstPrint(expr=self.get_expr())
         self.match(Token.RPAREN)
         return stmt
+
+    def get_return(self):
+        self.match(Token.KEYWORD)
+        return AstReturn(expr=self.get_expr())
 
     def matches_assign(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN)
@@ -494,6 +565,8 @@ class Parser(object):
         stmt = None
         if self.matches_keyword("print"):
             stmt = self.get_print()
+        elif self.matches_keyword("return"):
+            stmt = self.get_return()
         elif self.matches_assign():
             stmt = self.get_assign()
         else:
@@ -534,14 +607,14 @@ class Parser(object):
             lhs = AstBinOp(op=op, left=lhs, right=self.get_expr(prec+1))
         return lhs
 
-if __name__ == "__main__":
-    tokens = list(lex_text(sys.stdin.read()))
-    parser = Parser(tokens)
-    json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
+#  if __name__ == "__main__":
+    #  tokens = list(lex_text(sys.stdin.read()))
+    #  parser = Parser(tokens)
+    #  json.dump(parser.parse().get_bril(), sys.stdout, indent=4)
 
-#  text = open("prog6.py").read()
-#  tokens = list(lex_text(prog))
-#  parser = Parser(tokens)
+text = open("prog7.py").read()
+tokens = list(lex_text(text))
+parser = Parser(tokens)
 #  p = parser.parse()
 #  json.dump(p.get_bril(), sys.stdout, indent=4)
 
