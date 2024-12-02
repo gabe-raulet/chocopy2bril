@@ -53,6 +53,9 @@ class AstCall(Ast):
     def get_type(self, table):
         return None
 
+    def get_instrs(self, body):
+        return [{"op" : "call", "funcs" : [self.name]}]
+
 class AstLiteral(Ast):
 
     def __init__(self, value, type):

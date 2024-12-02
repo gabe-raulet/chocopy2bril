@@ -25,8 +25,9 @@ class Program(Body):
         self.funcs = funcs
 
     def get_bril(self):
-        main = {"name" : "main", "instrs" : self.get_instrs()}
-        return {"functions" : [main]}
+        funcs = [{"name" : "main", "instrs" : self.get_instrs()}]
+        for name, func in self.funcs.items(): funcs.append(func.get_bril())
+        return {"functions" : funcs}
 
 class Function(Body):
 
@@ -38,3 +39,6 @@ class Function(Body):
 
     def __repr__(self):
         return f"Function(name={self.name}, sig={self.sig}, ret_type={self.ret_type})"
+
+    def get_bril(self):
+        return {"name" : self.name, "instrs" : self.get_instrs()}

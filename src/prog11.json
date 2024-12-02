@@ -1,0 +1,32 @@
+{
+  "functions": [
+    {
+      "instrs": [
+        {
+          "dest": "r0",
+          "op": "const",
+          "type": "int",
+          "value": 5
+        },
+        {
+          "args": [
+            "r0"
+          ],
+          "op": "print"
+        }
+      ],
+      "name": "example"
+    },
+    {
+      "instrs": [
+        {
+          "funcs": [
+            "example"
+          ],
+          "op": "call"
+        }
+      ],
+      "name": "main"
+    }
+  ]
+}
