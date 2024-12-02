@@ -456,8 +456,11 @@ class Parser(object):
     def match_dedent(self):
         self.match("DEDENT")
 
+    def not_done(self):
+        return self.token() is not None
+
     def matches_typed_var(self):
-        return self.token() is not None and self.token().matches(Token.ID) and self.token(1).matches(Token.COLON)
+        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.COLON)
 
     def get_typed_var(self):
         name = self.match(Token.ID).value
