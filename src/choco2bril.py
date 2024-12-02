@@ -173,20 +173,9 @@ def lex_text(text):
             result = Token.match(line)
         yield Token("NEWLINE")
 
-class Program(object):
+class Body(object):
 
     def __init__(self, table, stmts):
-        self.table = table
-        self.stmts = stmts
-
-    def get_bril(self):
-        main_func = Function("main", self.table, self.stmts)
-        return {"functions" : [main_func.get_func()]}
-
-class Function(object):
-
-    def __init__(self, name, table, stmts):
-        self.name = name
         self.table = table
         self.stmts = stmts
         self.reg = 0
@@ -196,14 +185,22 @@ class Function(object):
         self.reg += 1
         return reg
 
-    def get_func(self):
+    def get_instrs(self):
         instrs = []
-        for name in self.table:
-            info = self.table[name]
+        for name, info in self.table.items():
             instrs.append({"dest" : name, "op" : "const", "value" : info["value"], "type" : info["type"]})
         for stmt in self.stmts:
             instrs += stmt.get_instrs(self)
-        return {"name" : self.name, "instrs" : instrs}
+        return instrs
+
+class Program(Body):
+
+    def __init__(self, table, stmts):
+        super().__init__(table, stmts)
+
+    def get_bril(self):
+        main = {"name" : "main", "instrs" : self.get_instrs()}
+        return {"functions" : [main]}
 
 class Ast(object):
     pass
@@ -216,8 +213,8 @@ class AstPrint(Ast):
     def __repr__(self):
         return f"AstPrint(expr={self.expr})"
 
-    def get_instrs(self, func):
-        instrs = self.expr.get_instrs(func)
+    def get_instrs(self, body):
+        instrs = self.expr.get_instrs(body)
         dest = instrs[-1]["dest"]
         instrs.append({"op" : "print", "args" : [dest]})
         return instrs
@@ -233,9 +230,9 @@ class AstVariable(Ast):
     def get_type(self, table):
         return table[self.name]["type"]
 
-    def get_instrs(self, func):
-        dest = func.next_reg()
-        return [{"dest" : dest, "op" : "id", "type" : self.get_type(func.table), "args" : [self.name]}]
+    def get_instrs(self, body):
+        dest = body.next_reg()
+        return [{"dest" : dest, "op" : "id", "type" : self.get_type(body.table), "args" : [self.name]}]
 
 class AstLiteral(Ast):
 
@@ -249,9 +246,9 @@ class AstLiteral(Ast):
     def get_type(self, table):
         return self.type
 
-    def get_instrs(self, func):
-        dest = func.next_reg()
-        return [{"dest" : dest, "op" : "const", "type" : self.get_type(func.table), "value" : self.value}]
+    def get_instrs(self, body):
+        dest = body.next_reg()
+        return [{"dest" : dest, "op" : "const", "type" : self.get_type(body.table), "value" : self.value}]
 
     def evaluate(self):
         return self.value
@@ -268,10 +265,10 @@ class AstAssign(Ast):
     def get_type(self, table):
         return None
 
-    def get_instrs(self, func):
-        instrs = self.expr.get_instrs(func)
+    def get_instrs(self, body):
+        instrs = self.expr.get_instrs(body)
         args = [instrs[-1]["dest"]]
-        type = self.expr.get_type(func.table)
+        type = self.expr.get_type(body.table)
         instrs.append({"dest" : self.target.name, "op" : "id", "type" : type, "args" : args})
         return instrs
 
@@ -286,16 +283,16 @@ class AstBinOp(Ast):
         return f"AstBinOp(op={self.op}, left={self.left}, right={self.right})"
 
     @staticmethod
-    def traverse(node, func, instrs, stack):
+    def traverse(node, body, instrs, stack):
         if isinstance(node, AstBinOp):
-            AstBinOp.traverse(node.left, func, instrs, stack)
-            AstBinOp.traverse(node.right, func, instrs, stack)
+            AstBinOp.traverse(node.left, body, instrs, stack)
+            AstBinOp.traverse(node.right, body, instrs, stack)
             rhs = stack.pop()
             lhs = stack.pop()
-            dest = func.next_reg()
+            dest = body.next_reg()
             op = node.op.lower()
-            ltype = node.left.get_type(func.table)
-            rtype = node.right.get_type(func.table)
+            ltype = node.left.get_type(body.table)
+            rtype = node.right.get_type(body.table)
             if op == "mod":
                 assert ltype == "int" and rtype == "int"
                 instrs.append({"dest" : dest, "op" : "div", "type" : "int", "args" : [lhs, rhs]})
@@ -319,13 +316,13 @@ class AstBinOp(Ast):
                 raise Exception("error")
             stack.append(dest)
         else:
-            instrs += node.get_instrs(func)
+            instrs += node.get_instrs(body)
             dest = instrs[-1]["dest"]
             stack.append(dest)
 
-    def get_instrs(self, func):
+    def get_instrs(self, body):
         instrs, stack = [], []
-        AstBinOp.traverse(self, func, instrs, stack)
+        AstBinOp.traverse(self, body, instrs, stack)
         return instrs
 
     def get_type(self, table):
@@ -377,18 +374,18 @@ class AstUnOp(Ast):
     def get_type(self, table):
         return self.expr.get_type(table)
 
-    def get_instrs(self, func):
-        instrs = self.expr.get_instrs(func)
+    def get_instrs(self, body):
+        instrs = self.expr.get_instrs(body)
         args = [instrs[-1]["dest"]]
-        type = self.get_type(func.table)
+        type = self.get_type(body.table)
         op = self.op.lower()
-        dest = func.next_reg()
+        dest = body.next_reg()
         if op == "not":
             assert type == "bool"
             instrs.append({"dest" : dest, "op" : "not", "type" : "bool", "args" : args})
         elif op == "usub":
             assert type == "int"
-            tmp = func.next_reg()
+            tmp = body.next_reg()
             instrs.append({"dest" : tmp, "op" : "const", "type" : "int", "value" : -1})
             instrs.append({"dest" : dest, "op" : "mul", "type" : "int", "args" : [tmp, args[0]]})
         else:
