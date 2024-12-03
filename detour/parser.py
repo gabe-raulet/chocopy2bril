@@ -1,6 +1,7 @@
 import sys
 import json
 from lexer import *
+from collections import defaultdict
 
 class Parser(object):
 
@@ -37,6 +38,15 @@ class Parser(object):
 
     def match_dedent(self):
         self.match("DEDENT")
+
+    def matches_newline(self):
+        return self.not_done() and self.token().matches("NEWLINE")
+
+    def matches_indent(self):
+        return self.not_done() and self.token().matches("INDENT")
+
+    def matches_dedent(self):
+        return self.not_done() and self.token().matches("DEDENT")
 
     def not_done(self):
         return self.token() is not None
@@ -83,12 +93,11 @@ class Parser(object):
         return var_def
 
     def get_func_def(self):
-        func_def = {} # {name -> str; typed_vars -> list; var_defs -> list; stmts -> list; ... rtype -> "int|bool"}
+        func_def = defaultdict(list)
         assert self.matches_keyword("def")
         self.match(Token.KEYWORD)
         func_def["name"] = self.match(Token.ID).value
         self.match(Token.LPAREN)
-        func_def["typed_vars"] = []
         if self.matches_typed_var():
             func_def["typed_vars"].append(self.get_typed_var())
             while self.token().matches(Token.COMMA):
@@ -101,34 +110,28 @@ class Parser(object):
         self.match(Token.COLON)
         self.match_newline()
         self.match_indent()
-        func_def["var_defs"] = []
         while self.matches_typed_var():
             var_def = self.get_var_def()
             func_def["var_defs"].append(var_def)
             func_def["typed_vars"].append(var_def["typed_var"])
-        func_def["stmts"] = []
-        while not self.token().matches("DEDENT"):
+        while not self.matches_dedent():
             stmt = self.get_stmt()
             if stmt: func_def["stmts"].append(stmt)
         self.match_dedent()
-        if not bool(func_def["typed_vars"]): del func_def["typed_vars"]
-        if not bool(func_def["var_defs"]): del func_def["var_defs"]
-        if not bool(func_def["stmts"]): del func_def["stmts"]
-        return func_def
+        return dict(func_def)
 
     def get_func_call(self):
         assert self.matches_func_call()
-        stmt = {"op" : "call"}
+        stmt = defaultdict(list)
+        stmt["op"] = "call"
         stmt["name"] = self.match(Token.ID).value
-        stmt["args"] = []
         if not self.token().matches(Token.RPAREN):
             stmt["args"].append(self.get_expr())
             while self.token().matches(Token.COMMA):
                 self.match(Token.COMMA)
                 stmt["args"].append(self.get_expr())
         self.match(Token.RPAREN)
-        if not bool(stmt["args"]): del stmt["args"]
-        return stmt
+        return dict(stmt)
 
     def get_assign(self):
         stmt = {"op" : "assign"}
@@ -186,7 +189,7 @@ class Parser(object):
 
     def parse(self):
 
-        program = {"var_defs" : [], "func_defs" : [], "stmts" : []}
+        program = defaultdict(list)
 
         while True:
             if self.matches_typed_var(): program["var_defs"].append(self.get_var_def())
@@ -195,11 +198,7 @@ class Parser(object):
 
         while self.not_done(): program["stmts"].append(self.get_stmt())
 
-        if not bool(program["var_defs"]): del program["var_defs"]
-        if not bool(program["func_defs"]): del program["func_defs"]
-        if not bool(program["stmts"]): del program["stmts"]
-
-        return program
+        return dict(program)
 
 if __name__ == "__main__":
     text = sys.stdin.read()
