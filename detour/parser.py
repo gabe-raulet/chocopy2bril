@@ -87,15 +87,14 @@ class Parser(object):
         self.match_newline()
         return var_def
 
-    def get_assign(self):
-        stmt = {"op" : "assign"}
-        assert self.matches_assign()
-        stmt["dest"] = self.match(Token.ID).value
-        stmt["expr"] = self.get_expr()
+    def get_pass(self):
+        stmt = {"stmt" : "pass"}
+        assert self.matches_keyword("pass")
+        self.match(Token.KEYWORD)
         return stmt
 
     def get_print(self):
-        stmt = {"op" : "print"}
+        stmt = {"stmt" : "print"}
         assert self.matches_keyword("print")
         self.match(Token.KEYWORD)
         self.match(Token.LPAREN)
@@ -103,35 +102,35 @@ class Parser(object):
         self.match(Token.RPAREN)
         return stmt
 
-    def get_return(self):
-        stmt = {"op" : "ret"}
-        assert self.matches_keyword("return")
-        self.match(Token.KEYWORD)
+    def get_assign(self):
+        stmt = {"stmt" : "assign"}
+        assert self.matches_assign()
+        stmt["dest"] = self.match(Token.ID).value
+        self.match(Token.ASSIGN)
         stmt["expr"] = self.get_expr()
         return stmt
 
     def get_expr(self):
+        expr = None
         if self.token().matches(Token.ID):
             name = self.match(Token.ID).value
-            return {"name" : name}
+            expr = {"name" : name}
         elif self.token().matches(Token.NUM):
             literal = self.match(Token.NUM).value
-            return {"literal" : literal, "type" : "int"}
+            expr = {"literal" : literal, "type" : "int"}
         elif self.token().matches(Token.BOOL):
             literal = self.match(Token.BOOL).value
-            return {"literal" : literal, "type" : "bool"}
+            expr = {"literal" : literal, "type" : "bool"}
         else:
             self.error()
-        return stmt
+        return expr
 
     def get_stmt(self):
         stmt = None
         if self.matches_keyword("pass"):
-            self.advance()
+            stmt = self.get_pass()
         elif self.matches_keyword("print"):
             stmt = self.get_print()
-        elif self.matches_keyword("return"):
-            stmt = self.get_return()
         elif self.matches_assign():
             stmt = self.get_assign()
         else:
