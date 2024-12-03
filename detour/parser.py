@@ -60,6 +60,9 @@ class Parser(object):
     def matches_func_def(self):
         return self.not_done() and self.matches_keyword("def") and self.token(1).matches(Token.ID)
 
+    def matches_func_call(self):
+        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.LPAREN)
+
     def matches_assign(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN)
 
@@ -155,9 +158,24 @@ class Parser(object):
         stmt["expr"] = self.get_expr()
         return stmt
 
+    def get_func_call(self):
+        expr = defaultdict(list)
+        assert self.matches_func_call()
+        expr["call"] = self.match(Token.ID).value
+        self.match(Token.LPAREN)
+        if not self.token().matches(Token.RPAREN):
+            expr["args"].append(self.get_expr())
+            while self.token().matches(Token.COMMA):
+                self.match(Token.COMMA)
+                expr["args"].append(self.get_expr())
+        self.match(Token.RPAREN)
+        return dict(expr)
+
     def get_expr(self):
         expr = None
-        if self.token().matches(Token.ID):
+        if self.matches_func_call():
+            expr = self.get_func_call()
+        elif self.token().matches(Token.ID):
             name = self.match(Token.ID).value
             expr = {"name" : name}
         elif self.token().matches(Token.NUM):
