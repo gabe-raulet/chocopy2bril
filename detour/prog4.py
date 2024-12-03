@@ -24,10 +24,11 @@ def func5(v1: bool, v2: int, v3: bool):
     pass
 
 def func6() -> int:
-    pass
+    a: int = 15
+    return a
 
 def func7() -> bool:
-    pass
+    return False
 
 def func8(a: int) -> bool:
     pass

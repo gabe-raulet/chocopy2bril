@@ -140,6 +140,13 @@ class Parser(object):
         self.match(Token.RPAREN)
         return stmt
 
+    def get_return(self):
+        stmt = {"stmt" : "return"}
+        assert self.matches_keyword("return")
+        self.match(Token.KEYWORD)
+        stmt["expr"] = self.get_expr()
+        return stmt
+
     def get_assign(self):
         stmt = {"stmt" : "assign"}
         assert self.matches_assign()
@@ -169,6 +176,8 @@ class Parser(object):
             stmt = self.get_pass()
         elif self.matches_keyword("print"):
             stmt = self.get_print()
+        elif self.matches_keyword("return"):
+            stmt = self.get_return()
         elif self.matches_assign():
             stmt = self.get_assign()
         else:
