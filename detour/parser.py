@@ -57,6 +57,9 @@ class Parser(object):
     def matches_typed_var(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.COLON)
 
+    def matches_func_def(self):
+        return self.not_done() and self.matches_keyword("def") and self.token(1).matches(Token.ID)
+
     def matches_assign(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN)
 
@@ -86,6 +89,41 @@ class Parser(object):
             self.error()
         self.match_newline()
         return var_def
+
+    def get_func_def(self):
+        func_def = defaultdict(list)
+        assert self.matches_keyword("def")
+        self.match(Token.KEYWORD)
+        func_def["name"] = self.match(Token.ID).value
+        self.match(Token.LPAREN)
+        var_types = {}
+        if self.matches_typed_var():
+            typed_var = self.get_typed_var()
+            var_types[typed_var["name"]] = typed_var["type"]
+            func_def["args"].append(typed_var["name"])
+            while self.token().matches(Token.COMMA):
+                self.match(Token.COMMA)
+                typed_var = self.get_typed_var()
+                var_types[typed_var["name"]] = typed_var["type"]
+                func_def["args"].append(typed_var["name"])
+        self.match(Token.RPAREN)
+        if self.token().matches(Token.ARROW):
+            self.match(Token.ARROW)
+            func_def["rtype"] = self.match(Token.TYPE).value
+        self.match(Token.COLON)
+        self.match_newline()
+        self.match_indent()
+        var_inits = {}
+        while self.matches_typed_var():
+            var_def = self.get_var_def()
+            var_types[var_def["name"]] = var_def["type"]
+            var_inits[var_def["name"]] = var_def["init"]
+        while not self.matches_dedent():
+            func_def["stmts"].append(self.get_stmt())
+        self.match_dedent()
+        if var_types: func_def["var_types"] = var_types
+        if var_inits: func_def["var_inits"] = var_inits
+        return func_def
 
     def get_pass(self):
         stmt = {"stmt" : "pass"}
@@ -144,6 +182,7 @@ class Parser(object):
 
         while True:
             if self.matches_typed_var(): program["var_defs"].append(self.get_var_def())
+            elif self.matches_func_def(): program["func_defs"].append(self.get_func_def())
             else: break
 
         while self.not_done(): program["stmts"].append(self.get_stmt())
