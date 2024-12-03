@@ -178,19 +178,20 @@ class Parser(object):
         return stmt
 
     def parse(self):
+
         program = {"var_defs" : [], "func_defs" : [], "stmts" : []}
+
         while True:
-            if self.matches_typed_var():
-                program["var_defs"].append(self.get_var_def())
-            elif self.matches_func_def():
-                program["func_defs"].append(self.get_func_def())
-            elif self.not_done():
-                program["stmts"].append(self.get_stmt())
-            else:
-                break
+            if self.matches_typed_var(): program["var_defs"].append(self.get_var_def())
+            elif self.matches_func_def(): program["func_defs"].append(self.get_func_def())
+            else: break
+
+        while self.not_done(): program["stmts"].append(self.get_stmt())
+
         if not bool(program["var_defs"]): del program["var_defs"]
         if not bool(program["func_defs"]): del program["func_defs"]
         if not bool(program["stmts"]): del program["stmts"]
+
         return program
 
 if __name__ == "__main__":
