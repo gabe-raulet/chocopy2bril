@@ -2,6 +2,7 @@ import sys
 import json
 from lexer import *
 from collections import defaultdict
+import pprint
 
 class Parser(object):
 
@@ -126,7 +127,7 @@ class Parser(object):
         self.match_dedent()
         if var_types: func_def["var_types"] = var_types
         if var_inits: func_def["var_inits"] = var_inits
-        return func_def
+        return dict(func_def)
 
     def get_pass(self):
         stmt = {"stmt" : "pass"}
@@ -203,23 +204,51 @@ class Parser(object):
         self.match_newline()
         return stmt
 
-    def parse(self):
-
-        program = defaultdict(list)
-
+    def get_defs(self):
+        var_types, var_inits = {}, {}
+        func_defs = []
         while True:
-            if self.matches_typed_var(): program["var_defs"].append(self.get_var_def())
-            elif self.matches_func_def(): program["func_defs"].append(self.get_func_def())
-            else: break
+            if self.matches_typed_var():
+                var_def = self.get_var_def()
+                var_types[var_def["name"]] = var_def["type"]
+                var_inits[var_def["name"]] = var_def["init"]
+            elif self.matches_func_def():
+                func_defs.append(self.get_func_def())
+            else:
+                break
+        return var_types, var_inits, func_defs
 
-        while self.not_done(): program["stmts"].append(self.get_stmt())
+    def get_stmts(self):
+        stmts = []
+        while self.not_done(): stmts.append(self.get_stmt())
+        return stmts
 
-        return dict(program)
+    def parse(self):
+        program = {}
+
+        var_types, var_inits, func_defs = self.get_defs()
+        stmts = self.get_stmts()
+
+        if var_types: program["var_types"] = var_types
+        if var_inits: program["var_inits"] = var_inits
+        if func_defs: program["func_defs"] = func_defs
+        if stmts: program["stmts"] = stmts
+
+        return program
+
+def get_pretty_json_str(d):
+    json = pprint.pformat(d, compact=True)
+    json = json.replace("'", '"')
+    json = json.replace("False", "false")
+    json = json.replace("True", "true")
+    json = json.replace("None", "null")
+    return json
+
 
 if __name__ == "__main__":
     text = sys.stdin.read()
     tokens = list(lex_text(text))
     parser = Parser(tokens)
-    program = parser.parse()
-    json.dump(program, sys.stdout, indent=4)
+    sys.stdout.write(get_pretty_json_str(program))
+    sys.stdout.flush()
 
