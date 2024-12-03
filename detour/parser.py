@@ -204,7 +204,7 @@ class Parser(object):
         self.match_newline()
         return stmt
 
-    def get_defs(self):
+    def get_decls(self):
         var_types, var_inits = {}, {}
         func_defs = []
         while True:
@@ -226,7 +226,7 @@ class Parser(object):
     def parse(self):
         program = {}
 
-        var_types, var_inits, func_defs = self.get_defs()
+        var_types, var_inits, func_defs = self.get_decls()
         stmts = self.get_stmts()
 
         if var_types: program["var_types"] = var_types
