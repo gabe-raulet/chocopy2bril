@@ -60,7 +60,7 @@ class Token(object):
     ARROW  = TokenPattern.exact("ARROW", "->")
     COMMA  = TokenPattern.exact("COMMA", ",")
 
-    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|def|return")
+    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|def|return|None")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
     BOOL    = TokenPattern.regexp("BOOL", r"True|False", process=lambda v: {"True" : True, "False" : False}[v])
 

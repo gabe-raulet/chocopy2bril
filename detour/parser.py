@@ -70,7 +70,10 @@ class Parser(object):
         typed_var = self.get_typed_var()
         var_def["typed_var"] = typed_var
         self.match(Token.ASSIGN)
-        if typed_var["type"] == "int":
+        if self.matches_keyword("None"):
+            self.advance()
+            var_def["init"] = None
+        elif typed_var["type"] == "int":
             var_def["init"] = self.match(Token.NUM).value
         elif typed_var["type"] == "bool":
             var_def["init"] = self.match(Token.BOOL).value
