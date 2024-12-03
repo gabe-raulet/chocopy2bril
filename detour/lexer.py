@@ -60,7 +60,7 @@ class Token(object):
     ARROW  = TokenPattern.exact("ARROW", "->")
     COMMA  = TokenPattern.exact("COMMA", ",")
 
-    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|def|return|None")
+    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|def|return|None|pass")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
     BOOL    = TokenPattern.regexp("BOOL", r"True|False", process=lambda v: {"True" : True, "False" : False}[v])
 
@@ -159,4 +159,6 @@ def lex_text(text):
             yield token
             result = Token.match(line)
         yield Token("NEWLINE")
-
+    while stack and stack[-1] > 0:
+        stack.pop()
+        yield Token("DEDENT")

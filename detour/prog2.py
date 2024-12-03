@@ -1,8 +1,8 @@
 # prog2.py
 #
+# stmts: no
 # var_defs: yes
 # func_defs: no
-# stmts: no
 
 var1: int = 15
 var2: bool = False

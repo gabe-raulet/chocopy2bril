@@ -1,8 +1,8 @@
 # prog1.py
 #
+# stmts: yes
 # var_defs: no
 # func_defs: no
-# stmts: yes
 
 print(15)
 print(False)

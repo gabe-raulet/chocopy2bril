@@ -107,8 +107,11 @@ class Parser(object):
             func_def["var_defs"].append(var_def)
             func_def["typed_vars"].append(var_def["typed_var"])
         func_def["stmts"] = []
-        while not self.token().matches("DEDENT"):
-            func_def["stmts"].append(self.get_stmt())
+        assert self.matches_keyword("pass")
+        self.match(Token.KEYWORD)
+        self.match_newline()
+        #  while not self.token().matches("DEDENT"):
+            #  func_def["stmts"].append(self.get_stmt())
         self.match_dedent()
         if not bool(func_def["typed_vars"]): del func_def["typed_vars"]
         if not bool(func_def["var_defs"]): del func_def["var_defs"]
@@ -204,7 +207,3 @@ if __name__ == "__main__":
     program = parser.parse()
     json.dump(program, sys.stdout, indent=4)
 
-#  text = open("prog.py").read()
-#  tokens = list(lex_text(text))
-#  parser = Parser(tokens)
-#  program = parser.parse()
