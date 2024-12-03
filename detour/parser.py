@@ -75,17 +75,18 @@ class Parser(object):
         return typed_var
 
     def get_var_def(self):
-        var_def = {} # {typed_var -> dict; init -> NUM|BOOL}
+        var_def = {} # {name -> ..; type -> ..; init -> ..}
         assert self.matches_typed_var()
         typed_var = self.get_typed_var()
-        var_def["typed_var"] = typed_var
+        var_def["name"] = typed_var["name"]
+        var_def["type"] = typed_var["type"]
         self.match(Token.ASSIGN)
         if self.matches_keyword("None"):
             self.advance()
             var_def["init"] = None
-        elif typed_var["type"] == "int":
+        elif var_def["type"] == "int":
             var_def["init"] = self.match(Token.NUM).value
-        elif typed_var["type"] == "bool":
+        elif var_def["type"] == "bool":
             var_def["init"] = self.match(Token.BOOL).value
         else:
             self.error()
