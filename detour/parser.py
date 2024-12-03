@@ -107,14 +107,13 @@ class Parser(object):
             func_def["var_defs"].append(var_def)
             func_def["typed_vars"].append(var_def["typed_var"])
         func_def["stmts"] = []
-        assert self.matches_keyword("pass")
-        self.match(Token.KEYWORD)
-        self.match_newline()
-        #  while not self.token().matches("DEDENT"):
-            #  func_def["stmts"].append(self.get_stmt())
+        while not self.token().matches("DEDENT"):
+            stmt = self.get_stmt()
+            if stmt: func_def["stmts"].append(stmt)
         self.match_dedent()
         if not bool(func_def["typed_vars"]): del func_def["typed_vars"]
         if not bool(func_def["var_defs"]): del func_def["var_defs"]
+        if not bool(func_def["stmts"]): del func_def["stmts"]
         return func_def
 
     def get_func_call(self):
@@ -172,7 +171,9 @@ class Parser(object):
 
     def get_stmt(self):
         stmt = None
-        if self.matches_keyword("print"):
+        if self.matches_keyword("pass"):
+            self.advance()
+        elif self.matches_keyword("print"):
             stmt = self.get_print()
         elif self.matches_keyword("return"):
             stmt = self.get_return()
