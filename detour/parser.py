@@ -57,12 +57,6 @@ class Parser(object):
     def matches_typed_var(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.COLON)
 
-    def matches_func_def(self):
-        return self.not_done() and self.matches_keyword("def") and self.token(1).matches(Token.ID)
-
-    def matches_func_call(self):
-        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.LPAREN)
-
     def matches_assign(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN)
 
@@ -93,47 +87,6 @@ class Parser(object):
         self.match_newline()
         return var_def
 
-    def get_func_def(self):
-        func_def = defaultdict(list)
-        assert self.matches_keyword("def")
-        self.match(Token.KEYWORD)
-        func_def["name"] = self.match(Token.ID).value
-        self.match(Token.LPAREN)
-        if self.matches_typed_var():
-            func_def["typed_vars"].append(self.get_typed_var())
-            while self.token().matches(Token.COMMA):
-                self.match(Token.COMMA)
-                func_def["typed_vars"].append(self.get_typed_var())
-        self.match(Token.RPAREN)
-        if self.token().matches(Token.ARROW):
-            self.match(Token.ARROW)
-            func_def["rtype"] = self.match(Token.TYPE).value
-        self.match(Token.COLON)
-        self.match_newline()
-        self.match_indent()
-        while self.matches_typed_var():
-            var_def = self.get_var_def()
-            func_def["var_defs"].append(var_def)
-            func_def["typed_vars"].append(var_def["typed_var"])
-        while not self.matches_dedent():
-            stmt = self.get_stmt()
-            if stmt: func_def["stmts"].append(stmt)
-        self.match_dedent()
-        return dict(func_def)
-
-    def get_func_call(self):
-        assert self.matches_func_call()
-        stmt = defaultdict(list)
-        stmt["op"] = "call"
-        stmt["name"] = self.match(Token.ID).value
-        if not self.token().matches(Token.RPAREN):
-            stmt["args"].append(self.get_expr())
-            while self.token().matches(Token.COMMA):
-                self.match(Token.COMMA)
-                stmt["args"].append(self.get_expr())
-        self.match(Token.RPAREN)
-        return dict(stmt)
-
     def get_assign(self):
         stmt = {"op" : "assign"}
         assert self.matches_assign()
@@ -158,9 +111,7 @@ class Parser(object):
         return stmt
 
     def get_expr(self):
-        if self.matches_func_call():
-            return self.get_func_call()
-        elif self.token().matches(Token.ID):
+        if self.token().matches(Token.ID):
             name = self.match(Token.ID).value
             return {"name" : name}
         elif self.token().matches(Token.NUM):
@@ -194,7 +145,6 @@ class Parser(object):
 
         while True:
             if self.matches_typed_var(): program["var_defs"].append(self.get_var_def())
-            elif self.matches_func_def(): program["func_defs"].append(self.get_func_def())
             else: break
 
         while self.not_done(): program["stmts"].append(self.get_stmt())
