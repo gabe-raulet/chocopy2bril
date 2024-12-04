@@ -199,7 +199,7 @@ class Parser(object):
         return stmt
 
     def get_assign_stmt(self):
-        assert self.matches_assign()
+        assert self.matches_assign_stmt()
         stmt = {"stmt" : "assign"}
         stmt["dest"] = self.match(Token.ID).value
         self.match(Token.ASSIGN)

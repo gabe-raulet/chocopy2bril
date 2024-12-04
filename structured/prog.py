@@ -11,6 +11,7 @@ def f():
     pass
 
 v: int = 9154235
+v = 135
 
 print(v)
 print(var2)
