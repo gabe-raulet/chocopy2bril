@@ -2,28 +2,28 @@ TODO
 
 1. The top level
 
-    * Global variable definitions
-    * Function definitions
-    * Top-level statements
+    * Global variable definitions # check
+    * Function definitions # check
+    * Top-level statements # check
 
 2. Functions
 
-    * Name
-    * Parameters
-    * Return type
-    * Declarations
-    * Statements
+    * Name # check
+    * Parameters # check
+    * Return type # check
+    * Declarations # check
+    * Statements # check
 
 3. Values
 
-    * Integers
-    * Booleans
-    * None
+    * Integers # check
+    * Booleans # check
+    * None # check
     (**) Lists
 
 4. Expressions
 
-    * Literals and identifiers
+    * Literals and identifiers # check
     * Call expressions
     * Conditional expressions
     (*) Relational expressions
@@ -34,9 +34,9 @@ TODO
 
 5. Statements
 
-    * Expression statements
-    * Assignment statements
-    * Print statements (special to Bril)
-    * Pass statement
-    * Return statement
+    * Expression statements # check
+    * Assignment statements # check
+    * Print statements (special to Bril) # check
+    * Pass statement # check
+    * Return statement # check
     (*) Compound statements: conditionals and loops
