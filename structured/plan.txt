@@ -1,0 +1,42 @@
+TODO
+
+1. The top level
+
+    * Global variable definitions
+    * Function definitions
+    * Top-level statements
+
+2. Functions
+
+    * Name
+    * Parameters
+    * Return type
+    * Declarations
+    * Statements
+
+3. Values
+
+    * Integers
+    * Booleans
+    * None
+    (**) Lists
+
+4. Expressions
+
+    * Literals and identifiers
+    * Call expressions
+    * Conditional expressions
+    (*) Relational expressions
+    (*) Arithmetic expressions
+    (*) Logical expressions
+    (**) List expressions
+    (**) Concatenation expressions
+
+5. Statements
+
+    * Expression statements
+    * Assignment statements
+    * Print statements (special to Bril)
+    * Pass statement
+    * Return statement
+    (*) Compound statements: conditionals and loops
