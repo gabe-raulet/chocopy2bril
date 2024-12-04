@@ -4,15 +4,18 @@ var3: bool = False
 
 def func1(a: int, b: bool) -> int:
     var1: bool = False
-    #  return a
+    print(var1)
+    return var1
 
-def func2() -> bool:
-    var: int = 1234
+def f():
+    pass
 
 v: int = 9154235
 
-#  def func2(a: int):
-    #  print(a)
+print(v)
+print(var2)
+print(4)
+print(False)
 
 #  var2 = func1(15, var3)
 #  print(var2)
