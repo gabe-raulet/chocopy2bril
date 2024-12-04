@@ -1,0 +1,204 @@
+{
+    "func_defs": [
+        {
+            "name": "func1",
+            "stmts": [
+                {
+                    "stmt": "pass"
+                }
+            ]
+        },
+        {
+            "name": "func2",
+            "args": [
+                "a"
+            ],
+            "stmts": [
+                {
+                    "stmt": "print",
+                    "expr": {
+                        "name": "a"
+                    }
+                },
+                {
+                    "stmt": "print",
+                    "expr": {
+                        "literal": 4,
+                        "type": "int"
+                    }
+                }
+            ],
+            "var_types": {
+                "a": "int"
+            }
+        },
+        {
+            "name": "func3",
+            "args": [
+                "a",
+                "b"
+            ],
+            "stmts": [
+                {
+                    "stmt": "print",
+                    "expr": {
+                        "name": "a"
+                    }
+                },
+                {
+                    "stmt": "print",
+                    "expr": {
+                        "name": "b"
+                    }
+                },
+                {
+                    "stmt": "print",
+                    "expr": {
+                        "name": "c"
+                    }
+                }
+            ],
+            "var_types": {
+                "a": "int",
+                "b": "int",
+                "c": "int"
+            },
+            "var_inits": {
+                "c": 2525
+            }
+        },
+        {
+            "name": "func4",
+            "args": [
+                "a",
+                "b"
+            ],
+            "stmts": [
+                {
+                    "stmt": "pass"
+                }
+            ],
+            "var_types": {
+                "a": "int",
+                "b": "bool"
+            }
+        },
+        {
+            "name": "func5",
+            "args": [
+                "v1",
+                "v2",
+                "v3"
+            ],
+            "stmts": [
+                {
+                    "stmt": "pass"
+                }
+            ],
+            "var_types": {
+                "v1": "bool",
+                "v2": "int",
+                "v3": "bool"
+            }
+        },
+        {
+            "name": "func6",
+            "rtype": "int",
+            "stmts": [
+                {
+                    "stmt": "return",
+                    "expr": {
+                        "name": "a"
+                    }
+                }
+            ],
+            "var_types": {
+                "a": "int"
+            },
+            "var_inits": {
+                "a": 15
+            }
+        },
+        {
+            "name": "func7",
+            "rtype": "bool",
+            "stmts": [
+                {
+                    "stmt": "return",
+                    "expr": {
+                        "literal": false,
+                        "type": "bool"
+                    }
+                }
+            ]
+        },
+        {
+            "name": "func8",
+            "args": [
+                "a"
+            ],
+            "rtype": "bool",
+            "stmts": [
+                {
+                    "stmt": "pass"
+                }
+            ],
+            "var_types": {
+                "a": "int"
+            }
+        },
+        {
+            "name": "func9",
+            "args": [
+                "a",
+                "b"
+            ],
+            "rtype": "int",
+            "stmts": [
+                {
+                    "stmt": "pass"
+                }
+            ],
+            "var_types": {
+                "a": "int",
+                "b": "int"
+            }
+        },
+        {
+            "name": "func10",
+            "args": [
+                "a",
+                "b"
+            ],
+            "rtype": "bool",
+            "stmts": [
+                {
+                    "stmt": "pass"
+                }
+            ],
+            "var_types": {
+                "a": "int",
+                "b": "bool"
+            }
+        },
+        {
+            "name": "func11",
+            "args": [
+                "v1",
+                "v2",
+                "v3"
+            ],
+            "rtype": "int",
+            "stmts": [
+                {
+                    "stmt": "pass"
+                }
+            ],
+            "var_types": {
+                "v1": "bool",
+                "v2": "int",
+                "v3": "bool"
+            }
+        }
+    ]
+}

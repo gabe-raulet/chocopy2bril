@@ -1,0 +1,34 @@
+{
+    "var_defs": [
+        {
+            "name": "var1",
+            "type": "int",
+            "init": 15
+        },
+        {
+            "name": "var2",
+            "type": "bool",
+            "init": false
+        },
+        {
+            "name": "var3",
+            "type": "bool",
+            "init": null
+        },
+        {
+            "name": "var4",
+            "type": "int",
+            "init": 66
+        },
+        {
+            "name": "var5",
+            "type": "bool",
+            "init": true
+        },
+        {
+            "name": "var6",
+            "type": "int",
+            "init": null
+        }
+    ]
+}
