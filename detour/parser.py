@@ -249,6 +249,6 @@ if __name__ == "__main__":
     text = sys.stdin.read()
     tokens = list(lex_text(text))
     parser = Parser(tokens)
-    sys.stdout.write(get_pretty_json_str(program))
+    sys.stdout.write(get_pretty_json_str(parser.parse()))
     sys.stdout.flush()
 
