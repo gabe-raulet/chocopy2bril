@@ -69,6 +69,9 @@ class Parser(object):
     def matches_literal(self):
         return self.not_done() and (self.token().matches(Token.NUM) or self.token().matches(Token.BOOL) or self.matches_keyword("None"))
 
+    def matches_identifier(self):
+        return self.not_done() and self.token().matches(Token.ID)
+
     def not_done(self):
         return self.token() is not None
 
@@ -82,12 +85,16 @@ class Parser(object):
         type = self.match(Token.TYPE).value
         return {"name" : name, "type" : type}
 
+    def get_identifier(self):
+        assert self.matches_identifier()
+        name = self.match(Token.ID).value
+        return {"name" : name}
+
     def get_expr(self):
         if self.matches_literal():
             return self.get_literal()
-        elif self.token().matches(Token.ID):
-            name = self.match(Token.ID).value
-            return {"name" : name}
+        elif self.matches_identifier():
+            return self.get_identifier()
         else:
             self.error()
 
