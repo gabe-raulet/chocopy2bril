@@ -12,7 +12,8 @@ def code_var_defs(types, inits):
 def code_func_def(func):
     bril = {}
     bril["name"] = func["name"]
-    bril["instrs"] = code_var_defs(func.get("types"), func.get("inits")) + [{"op" : "nop"}]
+    bril["instrs"] = code_var_defs(func.get("types"), func.get("inits"))
+    if not bril["instrs"]: bril["instrs"].append({"op" : "nop"})
     bril["type"] = func.get("type")
     bril["args"] = [{"name" : arg, "type" : func["types"][arg]} for arg in func.get("args", [])]
     return del_nulls(bril)
