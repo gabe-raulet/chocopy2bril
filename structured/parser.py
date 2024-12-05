@@ -88,7 +88,7 @@ class Parser(object):
     def get_identifier(self):
         assert self.matches_identifier()
         name = self.match(Token.ID).value
-        return {"name" : name}
+        return {"identifier" : name}
 
     def get_call_expr(self):
         assert self.matches_call_expr()

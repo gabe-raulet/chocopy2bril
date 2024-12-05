@@ -11,6 +11,7 @@ def f():
     pass
 
 v: int = 9154235
+var4: bool = None
 
 def f22(b: bool) -> bool:
     print(b)

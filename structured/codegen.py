@@ -2,11 +2,17 @@ import sys
 import json
 from parser import del_nulls
 
+def get_literal_value(type, literal):
+    if literal["literal"]: return literal["literal"]
+    elif type == "int": return 0
+    else: return False
+
 def code_var_defs(types, inits):
     instrs = []
     if not types or not inits: return instrs
     for name in inits:
-        instrs.append({"op" : "const", "dest" : name, "type" : types[name], "value" : inits[name]["literal"]})
+        value = get_literal_value(types[name], inits[name])
+        instrs.append({"op" : "const", "dest" : name, "type" : types[name], "value" : get_literal_value(types[name], inits[name])})
     return instrs
 
 def code_func_def(func):
@@ -22,6 +28,8 @@ def code_program(program):
     decls = program["decls"]
     #  stmts = program["stmts"]
     funcs = [code_func_def(func) for name, func in decls.get("funcs", {}).items()]
+    instrs = code_var_defs(decls.get("types"), decls.get("inits"))
+    funcs.append({"name" : "main", "instrs" : instrs})
     return {"functions" : funcs}
 
 #  program = json.load(open("prog.json"))
