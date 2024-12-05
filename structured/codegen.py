@@ -2,6 +2,11 @@ import sys
 import json
 from parser import del_nulls
 
+def get_expr_type(expr, types):
+    if "literal" in expr: return expr["type"]
+    elif "identifier" in expr: return types[expr["identifier"]]
+    else: raise Exception()
+
 def get_literal_value(type, literal):
     if literal["literal"]: return literal["literal"]
     elif type == "int": return 0
@@ -24,25 +29,35 @@ def code_func_def(func):
     bril["args"] = [{"name" : arg, "type" : func["types"][arg]} for arg in func.get("args", [])]
     return del_nulls(bril)
 
+def code_expr(expr, types):
+    instrs = []
+    type = get_expr_type(expr, types)
+    if "literal" in expr:
+        instrs.append({"op" : "const", "dest" : "tmp", "type" : type, "value" : expr["literal"]})
+    elif "identifier" in expr:
+        instrs.append({"op" : "id", "dest" : "tmp", "type" : type, "args" : [expr["identifier"]]})
+    else:
+        raise Exception()
+    return instrs
+
+def code_print(expr, types):
+    instrs = code_expr(expr, types)
+    instrs.append({"op" : "print", "args" : [instrs[-1]["dest"]]})
+    return instrs
+
+def code_stmt(stmt, types):
+    if stmt["stmt"] == "print": return code_print(stmt["expr"], types)
+    elif stmt["stmt"] == "assign": return code_assign(stmt["expr"], stmt["dest"], types)
+    else: raise Exception()
+
 def code_program(program):
     decls = program["decls"]
-    #  stmts = program["stmts"]
+    stmts = program["stmts"]
     funcs = [code_func_def(func) for name, func in decls.get("funcs", {}).items()]
     instrs = code_var_defs(decls.get("types"), decls.get("inits"))
+    for stmt in stmts: instrs += code_stmt(stmt, decls.get("types"))
     funcs.append({"name" : "main", "instrs" : instrs})
     return {"functions" : funcs}
-
-#  program = json.load(open("prog.json"))
-#  json.dump(code_program(program), sys.stdout, indent=4)
-
-#  decls = program["decls"]
-#  stmts = program["stmts"]
-
-#  funcs = decls["funcs"]
-#  inits = decls["inits"]
-#  types = decls["types"]
-
-#  func = funcs["func1"]
 
 if __name__ == "__main__":
     program = json.load(sys.stdin)
