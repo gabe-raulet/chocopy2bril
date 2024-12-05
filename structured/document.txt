@@ -1,0 +1,66 @@
+1. The top level
+
+    The top level of our language consists of global variable definitions, function definitions,
+    and top-level statements. The corresponding Bril program will have a main function that
+    corresponds to this top level. This means that the main function will define the variables
+    that occur at the top level, and will contain instructions that correspond to the top-level
+    statements. These instructions may include call expressions that reference functions defined
+    at the top-level, and may reference global variables as well. The top-level is represented
+    in our language grammar by:
+
+        (*) program ::= {var_def | func_def}* stmt*
+
+    where var_def and func_def are the productions corresponding to global variable definitions
+    and function definitions respectively, and stmt is the production corresponding to a valid
+    language statement.
+
+1.1. Global variable definitions
+
+    All variable definitions, including global definitions, follow the following grammar:
+
+        (*) var_def ::= typed_var = literal NEWLINE
+
+    where
+
+        (*) typed_var ::= ID : type
+        (*) type ::= "int" | "bool"
+        (*) literal ::= "None" | "True" | "False" | NUM (.)
+
+    In order to easily access the type and initialized literal value of variables, we create use
+    two separate dictionaries to store this information. We create a dictionary named "types" that
+    maps each variable name to its defined type and a dictionary named "inits" that maps each
+    variable name to its defined literal. Suppose we parse the following line at the top level:
+
+        (*) {id} : {type} = {literal} NEWLINE (.)
+
+    Then the the "types" and "inits" dictionaries associated with the top-level must have
+
+        (*) types[id] == type
+        (*) inits[id] == literal
+
+    For example, given the following program:
+
+    """
+    var1: int = 15
+    var2: int = 345
+    var3: int = None
+
+    var4: bool = True
+    var5: bool = False
+    var6: bool = None
+    """"
+
+    The parser function get_decls() will return the following dictionary:
+
+    {"inits": {"var1": 15,
+               "var2": 345,
+               "var3": null,
+               "var4": true,
+               "var5": false,
+               "var6": null},
+     "types": {"var1": "int",
+               "var2": "int",
+               "var3": "int",
+               "var4": "bool",
+               "var5": "bool",
+               "var6": "bool"}}
