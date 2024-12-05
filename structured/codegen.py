@@ -45,6 +45,12 @@ def code_print(expr, types):
     instrs.append({"op" : "print", "args" : [instrs[-1]["dest"]]})
     return instrs
 
+def code_assign(expr, dest, types):
+    assert get_expr_type(expr, types) == types[dest]
+    instrs = code_expr(expr, types)
+    instrs.append({"op" : "id", "dest" : dest, "type" : types[dest], "args" : [instrs[-1]["dest"]]})
+    return instrs
+
 def code_stmt(stmt, types):
     if stmt["stmt"] == "print": return code_print(stmt["expr"], types)
     elif stmt["stmt"] == "assign": return code_assign(stmt["expr"], stmt["dest"], types)

@@ -7,8 +7,8 @@ print(False)
 print(v1)
 print(v2)
 
-#  v1 = 44
-#  v2 = False
+v1 = 44
+v2 = False
 
-#  print(v1)
-#  print(v2)
+print(v1)
+print(v2)
