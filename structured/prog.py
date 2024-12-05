@@ -10,6 +10,9 @@ def func1(a: int, b: bool) -> int:
 def f():
     pass
 
+def g():
+    return
+
 v: int = 9154235
 var4: bool = None
 
@@ -17,6 +20,8 @@ def f22(b: bool) -> bool:
     print(b)
     return False
 
+v = 55
+v = None
 v = func1(var2, False)
 v = func1(var2, var3)
 

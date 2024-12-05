@@ -77,20 +77,25 @@ class Parser(object):
 
     def get_typed_var(self):
         """
-        typed_var ::= {id} : {type}
+        @grammar :: typed_var ::= ID : type
+        @dict    :: {"id" : ID, "type" : type}
         """
         assert self.matches_typed_var()
         name = self.match(Token.ID).value
         self.match(Token.COLON)
         type = self.match(Token.TYPE).value
-        return {"name" : name, "type" : type}
+        return {"id" : name, "type" : type}
 
     def get_identifier(self):
         assert self.matches_identifier()
         name = self.match(Token.ID).value
-        return {"identifier" : name}
+        return {"id" : name}
 
     def get_call_expr(self):
+        """
+        @grammar :: call_expr ::= ID ({expr {, expr}*}?)
+        @dict    :: {"call" : ID, "args" : [expr, ...]}
+        """
         assert self.matches_call_expr()
         name = self.match(Token.ID).value
         args = []
@@ -101,9 +106,13 @@ class Parser(object):
                 self.match(Token.COMMA)
                 args.append(self.get_expr())
         self.match(Token.RPAREN)
-        return del_nulls({"call" : name, "args" : args})
+        return {"call" : name, "args" : args}
 
     def get_expr(self):
+        """
+        @grammar :: expr ::= call_expr | literal | ID
+        @dict ...
+        """
         if self.matches_call_expr():
             return self.get_call_expr()
         elif self.matches_literal():
@@ -115,65 +124,73 @@ class Parser(object):
 
     def get_literal(self):
         """
-        literal ::= NUM | ID | None
+        @grammar :: literal ::= NUM | ID | None
+        @dict    :: {"literal" : literal, {"type" : type}?}
         """
         assert self.matches_literal()
-        literal = None
         if self.matches_keyword("None"):
             self.match(Token.KEYWORD)
-            literal = {"literal" : None}
+            return {"literal" : None}
         elif self.token().matches(Token.NUM):
             value = self.match(Token.NUM).value
-            literal = {"literal" : value, "type" : "int"}
+            return {"literal" : value, "type" : "int"}
         elif self.token().matches(Token.BOOL):
             value = self.match(Token.BOOL).value
-            literal = {"literal" : value, "type" : "bool"}
+            return {"literal" : value, "type" : "bool"}
         else:
             self.error()
-        return literal
 
     def get_var_def(self):
+        """
+        @grammar :: var_def ::= typed_var = literal NEWLINE
+        @dict    :: {"typed_var" : typed_var, "literal" : literal}
+        """
         assert self.matches_typed_var()
         typed_var = self.get_typed_var()
         self.match(Token.ASSIGN)
-        init = self.get_literal()
+        literal = self.get_literal()
+        if "type" in literal: assert typed_var["type"] == literal["type"]
         self.match_newline()
-        return {"name" : typed_var["name"], "type" : typed_var["type"], "init" : init}
+        return {"typed_var" : typed_var, "literal" : literal["literal"]}
 
     def get_decls(self):
-        types, inits, funcs = {}, {}, {}
+        """
+        @grammar :: decls ::= {var_def | func_def}*
+        @dict    :: {"var_defs" : [var_def..], "func_def" : [func_def..]}
+        """
+        var_defs, func_defs = [], []
         while True:
-            if self.matches_typed_var():
-                var_def = self.get_var_def()
-                types[var_def["name"]] = var_def["type"]
-                inits[var_def["name"]] = var_def["init"]
-            elif self.matches_func_def():
-                func_def = self.get_func_def()
-                funcs[func_def["name"]] = func_def
-            else:
-                break
-        return del_nulls({"types" : types, "inits" : inits, "funcs" : funcs})
+            if self.matches_typed_var(): var_defs.append(self.get_var_def())
+            elif self.matches_func_def(): func_defs.append(self.get_func_def())
+            else: break
+        return {"var_defs" : var_defs, "func_defs" : func_defs}
+
+    def get_func_body(self):
+        """
+        @grammar :: var_def* stmt+
+        @dict    :: {"var_defs" : [var_def..], "stmts" : [stmt..]}
+        """
+        func_body = self.get_decls()
+        assert len(func_body["func_defs"]) == 0
+        del func_body["func_defs"]
+        func_body["stmts"] = self.get_func_stmts()
+        return func_body
 
     def get_func_def(self):
+        """
+        @grammar :: func_def ::= "def" ID ( {typed_var{, typed_var}*}?) {-> type}? : NEWLINE INDENT func_body DEDENT
+        @dict    :: {"name" : ID, "params" : [typed_var..], "type" : type, "func_body" : func_body}
+        """
         assert self.matches_keyword("def")
         self.match(Token.KEYWORD)
-        func_name = self.match(Token.ID).value
+        name = self.match(Token.ID).value
         self.match(Token.LPAREN)
-        types = {}
-        args = []
+        params = []
         if self.matches_typed_var():
-            typed_var = self.get_typed_var()
-            name = typed_var["name"]
-            type = typed_var["type"]
-            args.append(name)
-            types[name] = type
+            params.append(self.get_typed_var())
             while self.token().matches(Token.COMMA):
                 self.match(Token.COMMA)
-                typed_var = self.get_typed_var()
-                name = typed_var["name"]
-                type = typed_var["type"]
-                args.append(name)
-                types[name] = type
+                params.append(self.get_typed_var())
         self.match(Token.RPAREN)
         type = None
         if self.token().matches(Token.ARROW):
@@ -182,53 +199,58 @@ class Parser(object):
         self.match(Token.COLON)
         self.match_newline()
         self.match_indent()
-        decls = self.get_decls()
-        stmts = self.get_func_stmts()
-        assert "funcs" not in decls
+        func_body = self.get_func_body()
         self.match_dedent()
-        if "types" in decls:
-            for var_name, var_type in decls["types"].items():
-                types[var_name] = var_type
-        inits = decls.get("inits")
-        return del_nulls({"name" : func_name, "args" : args, "types" : types, "inits" : inits, "type" : type, "stmts" : stmts})
-
-    #  * Expression statements
-    #  * Assignment statements
-    #  * Print statements (special to Bril)
-    #  * Pass statement
-    #  * Return statement
+        return {"name" : name, "params" : params, "type" : type, "func_body" : func_body}
 
     def get_pass_stmt(self):
+        """
+        @grammar :: pass_stmt ::= "pass"
+        @dict    :: {"stmt" : "pass"}
+        """
         assert self.matches_keyword("pass")
-        stmt = {"stmt" : "pass"}
         self.match(Token.KEYWORD)
-        return stmt
+        return {"stmt" : "pass"}
 
     def get_print_stmt(self):
+        """
+        @grammar :: print_stmt ::= "print" (expr)
+        @dict    :: {"stmt" : "print", "expr" : expr}
+        """
         assert self.matches_keyword("print")
-        stmt = {"stmt" : "print"}
         self.match(Token.KEYWORD)
         self.match(Token.LPAREN)
-        stmt["expr"] = self.get_expr()
+        expr = self.get_expr()
         self.match(Token.RPAREN)
-        return stmt
+        return {"stmt" : "print", "expr" : expr}
 
     def get_return_stmt(self):
+        """
+        @grammar :: return_stmt ::= "return" {expr}?
+        @dict    :: {"stmt" : "return", "expr" : expr}
+        """
         assert self.matches_keyword("return")
-        stmt = {"stmt" : "return"}
         self.match(Token.KEYWORD)
-        stmt["expr"] = self.get_expr()
+        stmt = {"stmt" : "return"}
+        if not self.matches_newline(): stmt["expr"] = self.get_expr()
         return stmt
 
     def get_assign_stmt(self):
+        """
+        @grammar :: assign_stmt ::= ID = expr
+        @dict    :: {"stmt" : "assign", "dest" : ID, "expr" : expr}
+        """
         assert self.matches_assign_stmt()
-        stmt = {"stmt" : "assign"}
-        stmt["dest"] = self.match(Token.ID).value
+        dest = self.match(Token.ID).value
         self.match(Token.ASSIGN)
-        stmt["expr"] = self.get_expr()
-        return stmt
+        expr = self.get_expr()
+        return {"stmt" : "assign", "dest" : dest, "expr" : expr}
 
     def get_stmt(self):
+        """
+        @grammar :: stmt ::= {pass_stmt | print_stmt | return_stmt | assign_stmt | expr} NEWLINE
+        @dict ...
+        """
         stmt = None
         if self.matches_keyword("pass"):
             stmt = self.get_pass_stmt()
@@ -265,7 +287,13 @@ def get_pretty_json_str(d):
 
 #  tokens = list(lex_text(open("prog.py").read()))
 #  parser = Parser(tokens)
+
 #  program = parser.get_program()
+#  decls = program["decls"]
+#  stmts = program["stmts"]
+
+#  var_defs = decls["var_defs"]
+#  func_defs = decls["func_defs"]
 
 if __name__ == "__main__":
     tokens = list(lex_text(sys.stdin.read()))
