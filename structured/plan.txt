@@ -24,7 +24,7 @@ TODO
 4. Expressions
 
     * Literals and identifiers # check
-    * Call expressions
+    * Call expressions # check
     * Conditional expressions
     (*) Relational expressions
     (*) Arithmetic expressions

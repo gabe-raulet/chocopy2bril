@@ -60,11 +60,11 @@ class Parser(object):
     def matches_func_def(self):
         return self.not_done() and self.matches_keyword("def") and self.token(1).matches(Token.ID)
 
-    def matches_func_call(self):
-        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.LPAREN)
-
     def matches_assign_stmt(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN)
+
+    def matches_call_expr(self):
+        return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.LPAREN)
 
     def matches_literal(self):
         return self.not_done() and (self.token().matches(Token.NUM) or self.token().matches(Token.BOOL) or self.matches_keyword("None"))
@@ -90,8 +90,23 @@ class Parser(object):
         name = self.match(Token.ID).value
         return {"name" : name}
 
+    def get_call_expr(self):
+        assert self.matches_call_expr()
+        name = self.match(Token.ID).value
+        args = []
+        self.match(Token.LPAREN)
+        if not self.token().matches(Token.RPAREN):
+            args.append(self.get_expr())
+            while self.token().matches(Token.COMMA):
+                self.match(Token.COMMA)
+                args.append(self.get_expr())
+        self.match(Token.RPAREN)
+        return del_nulls({"call" : name, "args" : args})
+
     def get_expr(self):
-        if self.matches_literal():
+        if self.matches_call_expr():
+            return self.get_call_expr()
+        elif self.matches_literal():
             return self.get_literal()
         elif self.matches_identifier():
             return self.get_identifier()
@@ -213,11 +228,6 @@ class Parser(object):
         stmt["expr"] = self.get_expr()
         return stmt
 
-    def get_expr_stmt(self):
-        stmt = {"stmt" : "expr"}
-        stmt["expr"] = self.get_expr()
-        return stmt
-
     def get_stmt(self):
         stmt = None
         if self.matches_keyword("pass"):
@@ -229,7 +239,7 @@ class Parser(object):
         elif self.matches_assign_stmt():
             stmt = self.get_assign_stmt()
         else:
-            stmt = self.get_expr_stmt()
+            stmt = self.get_expr()
         self.match_newline()
         return stmt
 
