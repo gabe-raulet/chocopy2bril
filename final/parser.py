@@ -159,7 +159,7 @@ class Parser(object):
         elif self.matches_assign_stmt():
             stmt = self.get_assign_stmt()
         else:
-            stmt = self.get_expr()
+            stmt = self.get_expr_stmt()
         self.match_newline()
         return stmt
 
@@ -243,6 +243,10 @@ class Parser(object):
     def get_type(self):
         assert self.matches_type()
         return self.match(Token.TYPE).value
+
+    def get_expr_stmt(self):
+        expr = self.get_expr()
+        return {"stmt" : "expr", "expr" : expr}
 
     def get_expr(self):
         if self.matches_call_expr():
