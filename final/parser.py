@@ -65,7 +65,7 @@ class Parser(object):
         name = self.get_identifier()
         self.match(Token.COLON)
         type = self.get_type()
-        return {"id" : name, "type" : type}
+        return {"@" : "typed_var", "id" : name["id"], "type" : type}
 
     def matches_var_def(self):
         return self.matches_typed_var()
@@ -76,7 +76,7 @@ class Parser(object):
         self.match(Token.ASSIGN)
         literal = self.get_literal()
         self.match_newline()
-        return {"typed_var" : typed_var, "literal" : literal}
+        return {"@" : "var_def", "typed_var" : typed_var, "literal" : literal}
 
     def matches_func_def(self):
         return self.not_done() and self.matches_keyword("def") and self.token(1).matches(Token.ID)
@@ -106,7 +106,7 @@ class Parser(object):
         stmts = self.get_func_stmts()
         assert len(stmts) >= 1
         self.match_dedent()
-        func_def = {"name" : name, "stmts" : stmts}
+        func_def = {"@" : "func_def", "name" : name, "stmts" : stmts}
         if params: func_def["params"] = params
         if var_defs: func_def["var_defs"] = var_defs
         if type: func_def["type"] = type
@@ -140,11 +140,11 @@ class Parser(object):
     def get_literal(self):
         assert self.matches_literal()
         if self.matches_num():
-            return {"value" : self.get_num(), "type" : "int"}
+            return {"@" : "literal", "value" : self.get_num(), "type" : "int"}
         elif self.matches_bool():
-            return {"value" : self.get_bool(), "type" : "bool"}
+            return {"@" : "literal", "value" : self.get_bool(), "type" : "bool"}
         elif self.matches_null():
-            return {"value" : self.get_null()}
+            return {"@" : "literal", "value" : self.get_null()}
         else:
             self.error()
 
@@ -179,7 +179,7 @@ class Parser(object):
     def get_pass_stmt(self):
         assert self.matches_pass_stmt()
         self.match(Token.KEYWORD)
-        return {"stmt" : "pass"}
+        return {"@" : "stmt", "stmt" : "pass"}
 
     def matches_print_stmt(self):
         return self.matches_keyword("print")
@@ -190,7 +190,7 @@ class Parser(object):
         self.match(Token.LPAREN)
         expr = self.get_expr()
         self.match(Token.RPAREN)
-        return {"stmt" : "print", "expr" : expr}
+        return {"@" : "stmt", "stmt" : "print", "expr" : expr}
 
     def matches_return_stmt(self):
         return self.matches_keyword("return")
@@ -198,7 +198,7 @@ class Parser(object):
     def get_return_stmt(self):
         assert self.matches_return_stmt()
         self.match(Token.KEYWORD)
-        stmt = {"stmt" : "return"}
+        stmt = {"@" : "stmt", "stmt" : "return"}
         if not self.matches_newline(): stmt["expr"] = self.get_expr()
         return stmt
 
@@ -210,7 +210,7 @@ class Parser(object):
         dest = self.get_identifier()
         self.match(Token.ASSIGN)
         expr = self.get_expr()
-        return {"stmt" : "assign", "dest" : dest, "expr" : expr}
+        return {"@" : "stmt", "stmt" : "assign", "dest" : dest["id"], "expr" : expr}
 
     def matches_call_expr(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.LPAREN)
@@ -226,7 +226,7 @@ class Parser(object):
                 self.match(Token.COMMA)
                 args.append(self.get_expr())
         self.match(Token.RPAREN)
-        expr = {"call" : name}
+        expr = {"@" : "call", "func" : name["id"]}
         if args: expr["args"] = args
         return expr
 
@@ -235,18 +235,18 @@ class Parser(object):
 
     def get_identifier(self):
         assert self.matches_identifier()
-        return self.match(Token.ID).value
+        return {"@" : "id", "id" : self.match(Token.ID).value}
 
     def matches_type(self):
         return self.not_done() and self.token().matches(Token.TYPE)
 
     def get_type(self):
         assert self.matches_type()
-        return self.match(Token.TYPE).value
+        return {"@" : "type", "type" : self.match(Token.TYPE).value}
 
     def get_expr_stmt(self):
         expr = self.get_expr()
-        return {"stmt" : "expr", "expr" : expr}
+        return {"@" : "stmt", "stmt" : "expr", "expr" : expr}
 
     def get_expr(self):
         if self.matches_call_expr():
@@ -266,7 +266,7 @@ class Parser(object):
             else:
                 func_defs.append(self.get_func_def())
         stmts = self.get_stmts()
-        program = {}
+        program = {"@" : "program"}
         if var_defs: program["var_defs"] = var_defs
         if func_defs: program["func_defs"] = func_defs
         if stmts: program["stmts"] = stmts
