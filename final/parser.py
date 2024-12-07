@@ -2,6 +2,7 @@ import sys
 import json
 from lexer import *
 import pprint
+from myast import *
 
 def del_nulls(d):
     return {key : val for key, val in d.items() if bool(val)}
@@ -65,7 +66,7 @@ class Parser(object):
         name = self.get_identifier()
         self.match(Token.COLON)
         type = self.get_type()
-        return {"@" : "typed_var", "id" : name["id"], "type" : type}
+        return TypedVar(name, type)
 
     def matches_var_def(self):
         return self.matches_typed_var()
@@ -76,7 +77,7 @@ class Parser(object):
         self.match(Token.ASSIGN)
         literal = self.get_literal()
         self.match_newline()
-        return {"@" : "var_def", "typed_var" : typed_var, "literal" : literal}
+        return VarDef(typed_var, literal)
 
     def matches_func_def(self):
         return self.not_done() and self.matches_keyword("def") and self.token(1).matches(Token.ID)
@@ -106,11 +107,7 @@ class Parser(object):
         stmts = self.get_func_stmts()
         assert len(stmts) >= 1
         self.match_dedent()
-        func_def = {"@" : "func_def", "name" : name, "stmts" : stmts}
-        if params: func_def["params"] = params
-        if var_defs: func_def["var_defs"] = var_defs
-        if type: func_def["type"] = type
-        return func_def
+        return FuncDef(name, stmts, var_defs, params, type)
 
     def matches_num(self):
         return self.not_done() and self.token().matches(Token.NUM)
@@ -126,25 +123,15 @@ class Parser(object):
         assert self.matches_bool()
         return self.match(Token.BOOL).value
 
-    def matches_null(self):
-        return self.not_done() and self.matches_keyword("None")
-
-    def get_null(self):
-        assert self.matches_null()
-        self.match(Token.KEYWORD)
-        return None
-
     def matches_literal(self):
-        return self.matches_num() or self.matches_bool() or self.matches_null()
+        return self.matches_num() or self.matches_bool()
 
     def get_literal(self):
         assert self.matches_literal()
         if self.matches_num():
-            return {"@" : "literal", "value" : self.get_num(), "type" : "int"}
+            return Literal(self.get_num(), "int")
         elif self.matches_bool():
-            return {"@" : "literal", "value" : self.get_bool(), "type" : "bool"}
-        elif self.matches_null():
-            return {"@" : "literal", "value" : self.get_null()}
+            return Literal(self.get_bool(), "bool")
         else:
             self.error()
 
@@ -179,7 +166,7 @@ class Parser(object):
     def get_pass_stmt(self):
         assert self.matches_pass_stmt()
         self.match(Token.KEYWORD)
-        return {"@" : "stmt", "stmt" : "pass"}
+        return PassStmt()
 
     def matches_print_stmt(self):
         return self.matches_keyword("print")
@@ -190,7 +177,7 @@ class Parser(object):
         self.match(Token.LPAREN)
         expr = self.get_expr()
         self.match(Token.RPAREN)
-        return {"@" : "stmt", "stmt" : "print", "expr" : expr}
+        return PrintStmt(expr)
 
     def matches_return_stmt(self):
         return self.matches_keyword("return")
@@ -198,9 +185,8 @@ class Parser(object):
     def get_return_stmt(self):
         assert self.matches_return_stmt()
         self.match(Token.KEYWORD)
-        stmt = {"@" : "stmt", "stmt" : "return"}
-        if not self.matches_newline(): stmt["expr"] = self.get_expr()
-        return stmt
+        expr = self.get_expr()
+        return ReturnStmt(expr)
 
     def matches_assign_stmt(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.ASSIGN)
@@ -210,7 +196,7 @@ class Parser(object):
         dest = self.get_identifier()
         self.match(Token.ASSIGN)
         expr = self.get_expr()
-        return {"@" : "stmt", "stmt" : "assign", "dest" : dest["id"], "expr" : expr}
+        return AssignStmt(dest, expr)
 
     def matches_call_expr(self):
         return self.not_done() and self.token().matches(Token.ID) and self.token(1).matches(Token.LPAREN)
@@ -226,27 +212,29 @@ class Parser(object):
                 self.match(Token.COMMA)
                 args.append(self.get_expr())
         self.match(Token.RPAREN)
-        expr = {"@" : "call", "func" : name["id"]}
-        if args: expr["args"] = args
-        return expr
+        return CallExpr(name, args)
 
     def matches_identifier(self):
         return self.not_done() and self.token().matches(Token.ID)
 
     def get_identifier(self):
         assert self.matches_identifier()
-        return {"@" : "id", "id" : self.match(Token.ID).value}
+        return self.match(Token.ID).value
+
+    def get_id_expr(self):
+        assert self.matches_identifier()
+        return IdExpr(self.get_identifier())
 
     def matches_type(self):
         return self.not_done() and self.token().matches(Token.TYPE)
 
     def get_type(self):
         assert self.matches_type()
-        return {"@" : "type", "type" : self.match(Token.TYPE).value}
+        return self.match(Token.TYPE).value
 
     def get_expr_stmt(self):
         expr = self.get_expr()
-        return {"@" : "stmt", "stmt" : "expr", "expr" : expr}
+        return ExprStmt(expr)
 
     def get_expr(self):
         if self.matches_call_expr():
@@ -254,7 +242,7 @@ class Parser(object):
         elif self.matches_literal():
             return self.get_literal()
         elif self.matches_identifier():
-            return self.get_identifier()
+            return self.get_id_expr()
         else:
             self.error()
 
@@ -266,23 +254,21 @@ class Parser(object):
             else:
                 func_defs.append(self.get_func_def())
         stmts = self.get_stmts()
-        program = {"@" : "program"}
-        if var_defs: program["var_defs"] = var_defs
-        if func_defs: program["func_defs"] = func_defs
-        if stmts: program["stmts"] = stmts
-        return program
+        return Program(var_defs, func_defs, stmts)
 
-def get_pretty_json_str(d):
-    json = pprint.pformat(d, compact=True)
-    json = json.replace("'", '"').replace("False", "false").replace("True", "true").replace("None", "null")
-    return json
+#  def get_pretty_json_str(d):
+    #  json = pprint.pformat(d, compact=True)
+    #  json = json.replace("'", '"').replace("False", "false").replace("True", "true").replace("None", "null")
+    #  return json
 
-if __name__ == "__main__":
-    tokens = list(lex_text(sys.stdin.read()))
-    parser = Parser(tokens)
-    program = parser.get_program()
-    sys.stdout.write(get_pretty_json_str(program))
-    sys.stdout.flush()
+#  if __name__ == "__main__":
+    #  tokens = list(lex_text(sys.stdin.read()))
+    #  parser = Parser(tokens)
+    #  program = parser.get_program()
+    #  sys.stdout.write(get_pretty_json_str(program))
+    #  sys.stdout.flush()
 
-#  tokens = list(lex_text(open("prog.py").read()))
-#  parser = Parser(tokens)
+tokens = list(lex_text(open("prog.py").read()))
+parser = Parser(tokens)
+program = parser.get_program()
+json.dump(program.get_bril(), sys.stdout, indent=4)
