@@ -250,3 +250,100 @@ class CallExpr(Expr):
         dest = scope.next_reg()
         instrs.append({"dest" : dest, "op" : "call", "type" : type, "funcs" : [self.name], "args" : args})
         return instrs
+
+class UnOpExpr(Expr):
+
+    def __init__(self, op, expr):
+        self.op = op
+        self.expr = expr
+
+    def __repr__(self):
+        return f"UnOpExpr(op={self.op}, expr={self.expr})"
+
+    def get_type(self, scope):
+        return self.expr.get_type(scope)
+
+    def get_instrs(self, scope):
+        instrs = self.expr.get_instrs(scope)
+        type = self.get_type(scope)
+        op = self.op.lower()
+        args = [instrs[-1]["dest"]]
+        dest = scope.next_reg()
+        if op == "not":
+            assert type == "bool"
+            instrs.append({"dest" : dest, "op" : "not", "type" : "bool", "args" : args})
+        else:
+            raise Exception()
+        return instrs
+
+
+class BinOpExpr(Expr):
+
+    def __init__(self, op, left, right):
+        self.op = op
+        self.left = left
+        self.right = right
+
+    def __repr__(self):
+        return f"UnOpExpr(op={self.op}, left={self.left}, right={self.right})"
+
+    @staticmethod
+    def traverse(node, scope, instrs, stack):
+        if isinstance(node, BinOpExpr):
+            BinOpExpr.traverse(node.left, scope, instrs, stack)
+            BinOpExpr.traverse(node.right, scope, instrs, stack)
+            rhs = stack.pop()
+            lhs = stack.pop()
+            dest = scope.next_reg()
+            op = node.op.lower()
+            ltype = node.left.get_type(scope)
+            rtype = node.right.get_type(scope)
+            if op == "mod":
+                assert ltype == "int" and rtype == "int"
+                instrs.append({"dest" : dest, "op" : "div", "type" : "int", "args" : [lhs, rhs]})
+                instrs.append({"dest" : dest, "op" : "mul", "type" : "int", "args" : [dest, rhs]})
+                instrs.append({"dest" : dest, "op" : "sub", "type" : "int", "args" : [lhs, dest]})
+            elif op in {"lt", "gt", "le", "ge"}:
+                assert ltype == "int" and rtype == "int"
+                instrs.append({"dest" : dest, "op" : op, "type" : "bool", "args" : [lhs, rhs]})
+            elif op in {"eq", "ne"}:
+                assert ltype == "int" and rtype == "int" # TODO: implement version that works for bools as well
+                instrs.append({"dest" : dest, "op" : "eq", "type" : "bool", "args" : [lhs, rhs]})
+                if op == "ne":
+                    instrs.append({"dest" : dest, "op" : "not", "type" : "bool", "args" : [dest]})
+            elif op  in {"or", "and"}:
+                assert ltype == "bool" and rtype == "bool"
+                instrs.append({"dest" : dest, "op" : op, "type" : "bool", "args" : [lhs, rhs]})
+            elif op in {"add", "sub", "mul", "div"}:
+                assert ltype == "int" and rtype == "int"
+                instrs.append({"dest" : dest, "op" : op, "type" : "int", "args" : [lhs, rhs]})
+            else:
+                raise Exception()
+            stack.append(dest)
+        else:
+            instrs += node.get_instrs(scope)
+            dest = instrs[-1]["dest"]
+            stack.append(dest)
+
+    def get_instrs(self, scope):
+        instrs, stack = [], []
+        BinOpExpr.traverse(self, scope, instrs, stack)
+        return instrs
+
+    def get_type(self, scope):
+        lhs = self.left.get_type(scope)
+        rhs = self.right.get_type(scope)
+        if self.op in {"ADD", "SUB", "MUL", "DIV", "MOD"}:
+            assert lhs == "int" and rhs == "int"
+            return "int"
+        elif self.op in {"LT", "GT", "LE", "GE"}:
+            assert lhs == "int" and rhs == "int"
+            return "bool"
+        elif self.op in {"EQ", "NE"}:
+            assert lhs == rhs
+            return "bool"
+        elif self.op in {"AND", "OR"}:
+            assert lhs == "bool" and rhs == "bool"
+            return "bool"
+        else:
+            raise Exception()

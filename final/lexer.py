@@ -38,6 +38,17 @@ class TokenPattern(object):
 
 class Token(object):
 
+    PRECEDENCE = { "OR" : 2,
+                  "AND" : 3,
+                  "NOT" : 4,
+                   "EQ" : 5,  "NE" : 5,  "LT" : 5, "GT" : 5, "LE" : 5, "GE" : 5,
+                  "ADD" : 6, "SUB" : 6,
+                  "MUL" : 7, "DIV" : 7, "MOD" : 7}
+
+    @staticmethod
+    def get_precedence(op):
+        return Token.PRECEDENCE.get(op, -float('inf'))
+
     OR = TokenPattern.exact("OR", "or")
     AND = TokenPattern.exact("AND", "and")
     NOT = TokenPattern.exact("NOT", "not")

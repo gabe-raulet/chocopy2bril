@@ -236,15 +236,32 @@ class Parser(object):
         expr = self.get_expr()
         return ExprStmt(expr)
 
-    def get_expr(self):
+    def get_atom(self, min_prec=1):
         if self.matches_call_expr():
             return self.get_call_expr()
+        elif self.token().matches(Token.LPAREN):
+            self.match(Token.LPAREN)
+            expr = self.get_expr()
+            self.match(Token.RPAREN)
+            return expr
+        elif self.token().matches(Token.NOT):
+            self.advance()
+            return UnOpExpr(op="NOT", expr=self.get_expr())
         elif self.matches_literal():
             return self.get_literal()
         elif self.matches_identifier():
             return self.get_id_expr()
         else:
             self.error()
+
+    def get_expr(self, min_prec=1):
+        lhs = self.get_atom()
+        while self.not_done() and Token.get_precedence(self.token().name) >= min_prec:
+            op = self.token().name
+            prec = Token.get_precedence(op)
+            self.advance()
+            lhs = BinOpExpr(op=op, left=lhs, right=self.get_expr(prec+1))
+        return lhs
 
     def get_program(self):
         var_defs, func_defs, = [], []
@@ -256,17 +273,19 @@ class Parser(object):
         stmts = self.get_stmts()
         return Program(var_defs, func_defs, stmts)
 
-def get_pretty_json_str(d):
-    json = pprint.pformat(d, compact=True)
-    json = json.replace("'", '"').replace("False", "false").replace("True", "true").replace("None", "null")
-    return json
+#  def get_pretty_json_str(d):
+    #  json = pprint.pformat(d, compact=True)
+    #  json = json.replace("'", '"').replace("False", "false").replace("True", "true").replace("None", "null")
+    #  return json
 
 if __name__ == "__main__":
     tokens = list(lex_text(sys.stdin.read()))
     parser = Parser(tokens)
     program = parser.get_program()
-    sys.stdout.write(get_pretty_json_str(program.get_bril()))
-    sys.stdout.flush()
+    json.dump(program.get_bril(), sys.stdout, indent=4)
+
+    #  sys.stdout.write(get_pretty_json_str(program.get_bril()))
+    #  sys.stdout.flush()
 
 #  tokens = list(lex_text(open("prog.py").read()))
 #  parser = Parser(tokens)
