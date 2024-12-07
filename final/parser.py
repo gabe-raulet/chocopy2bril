@@ -256,19 +256,19 @@ class Parser(object):
         stmts = self.get_stmts()
         return Program(var_defs, func_defs, stmts)
 
-#  def get_pretty_json_str(d):
-    #  json = pprint.pformat(d, compact=True)
-    #  json = json.replace("'", '"').replace("False", "false").replace("True", "true").replace("None", "null")
-    #  return json
+def get_pretty_json_str(d):
+    json = pprint.pformat(d, compact=True)
+    json = json.replace("'", '"').replace("False", "false").replace("True", "true").replace("None", "null")
+    return json
 
-#  if __name__ == "__main__":
-    #  tokens = list(lex_text(sys.stdin.read()))
-    #  parser = Parser(tokens)
-    #  program = parser.get_program()
-    #  sys.stdout.write(get_pretty_json_str(program))
-    #  sys.stdout.flush()
+if __name__ == "__main__":
+    tokens = list(lex_text(sys.stdin.read()))
+    parser = Parser(tokens)
+    program = parser.get_program()
+    sys.stdout.write(get_pretty_json_str(program.get_bril()))
+    sys.stdout.flush()
 
-tokens = list(lex_text(open("prog.py").read()))
-parser = Parser(tokens)
-program = parser.get_program()
-json.dump(program.get_bril(), sys.stdout, indent=4)
+#  tokens = list(lex_text(open("prog.py").read()))
+#  parser = Parser(tokens)
+#  program = parser.get_program()
+#  json.dump(program.get_bril(), sys.stdout, indent=4)
