@@ -186,12 +186,24 @@ class IfStmt(Stmt):
     def get_instrs(self, scope):
         instrs = self.if_cond.get_instrs(scope)
         cond = instrs[-1]["dest"]
-        if_label = scope.next_label()
-        endif_label = scope.next_label()
-        instrs.append({"op" : "br", "labels" : [if_label, endif_label], "args" : [cond]})
-        instrs.append({"label" : if_label})
+
+        cond_label = f"{scope.next_label()}.if.cond"
+        else_label = f"{scope.next_label()}.else"
+        endif_label = f"{scope.next_label()}.endif"
+
+        instrs.append({"op" : "br", "labels" : [cond_label, else_label], "args" : [cond]})
+        instrs.append({"label" : cond_label})
+
         for stmt in self.if_block:
             instrs += stmt.get_instrs(scope)
+
+        instrs.append({"op" : "jmp", "labels" : [endif_label]})
+
+        instrs.append({"label" : else_label})
+        if self.else_block:
+            for stmt in self.else_block:
+                instrs += stmt.get_instrs(scope)
+
         instrs.append({"label" : endif_label})
         return instrs
 

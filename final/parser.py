@@ -197,17 +197,11 @@ class Parser(object):
         self.match(Token.COLON)
         if_block = self.get_block()
         else_block = None
+        if self.matches_keyword("else"):
+            self.match_keyword("else")
+            self.match(Token.COLON)
+            else_block = self.get_block()
         return IfStmt(cond, if_block, else_block)
-        #  self.match_keyword("if")
-        #  if_cond = self.get_expr()
-        #  self.match(Token.COLON)
-        #  if_block = self.get_block()
-        #  else_block = None
-        #  if self.not_done() and self.matches_keyword("else"):
-            #  self.match_keyword("else")
-            #  self.match(Token.COLON)
-            #  else_block = self.get_block()
-        #  return IfStmt(if_cond, if_block, else_block)
 
     def matches_print_stmt(self):
         return self.matches_keyword("print")
@@ -317,6 +311,10 @@ class Parser(object):
         var_defs, func_defs = self.get_decls()
         stmts = self.get_stmts()
         return Program(var_defs, func_defs, stmts)
+
+#  tokens = list(lex_text(open("ifstmt2.py").read()))
+#  parser = Parser(tokens)
+#  program = parser.get_program()
 
 if __name__ == "__main__":
     tokens = list(lex_text(sys.stdin.read()))
