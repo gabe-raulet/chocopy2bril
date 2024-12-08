@@ -193,15 +193,21 @@ class Parser(object):
 
     def get_if_stmt(self):
         self.match_keyword("if")
-        if_cond = self.get_expr()
+        cond = self.get_expr()
         self.match(Token.COLON)
         if_block = self.get_block()
         else_block = None
-        if self.not_done() and self.matches_keyword("else"):
-            self.match_keyword("else")
-            self.match(Token.COLON)
-            else_block = self.get_block()
-        return IfStmt(if_cond, if_block, else_block)
+        return IfStmt(cond, if_block, else_block)
+        #  self.match_keyword("if")
+        #  if_cond = self.get_expr()
+        #  self.match(Token.COLON)
+        #  if_block = self.get_block()
+        #  else_block = None
+        #  if self.not_done() and self.matches_keyword("else"):
+            #  self.match_keyword("else")
+            #  self.match(Token.COLON)
+            #  else_block = self.get_block()
+        #  return IfStmt(if_cond, if_block, else_block)
 
     def matches_print_stmt(self):
         return self.matches_keyword("print")
@@ -312,13 +318,9 @@ class Parser(object):
         stmts = self.get_stmts()
         return Program(var_defs, func_defs, stmts)
 
-#  if __name__ == "__main__":
-    #  tokens = list(lex_text(sys.stdin.read()))
-    #  parser = Parser(tokens)
-    #  program = parser.get_program()
-    #  json.dump(program.get_bril(), sys.stdout, indent=4)
+if __name__ == "__main__":
+    tokens = list(lex_text(sys.stdin.read()))
+    parser = Parser(tokens)
+    program = parser.get_program()
+    json.dump(program.get_bril(), sys.stdout, indent=4)
 
-tokens = list(lex_text(open("ifstmt.py").read()))
-parser = Parser(tokens)
-program = parser.get_program()
-json.dump(program.get_bril(), sys.stdout, indent=4)

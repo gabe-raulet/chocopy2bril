@@ -34,6 +34,7 @@ class Scope(object):
 
     def __init__(self, var_decls, func_defs=[]):
         self.reg = 0
+        self.label = 1
         self.types = {}
         for name in var_decls.types:
             self.types[name] = var_decls.get_type(name)
@@ -48,6 +49,11 @@ class Scope(object):
         reg = f"r{self.reg}"
         self.reg += 1
         return reg
+
+    def next_label(self):
+        label = f"L{self.label}"
+        self.label += 1
+        return label
 
 class Ast(object):
     pass
@@ -177,6 +183,18 @@ class IfStmt(Stmt):
     def __repr__(self):
         return f"IfStmt(if_cond={self.if_cond}, if_block={self.if_block}, else_block={self.else_block})"
 
+    def get_instrs(self, scope):
+        instrs = self.if_cond.get_instrs(scope)
+        cond = instrs[-1]["dest"]
+        if_label = scope.next_label()
+        endif_label = scope.next_label()
+        instrs.append({"op" : "br", "labels" : [if_label, endif_label], "args" : [cond]})
+        instrs.append({"label" : if_label})
+        for stmt in self.if_block:
+            instrs += stmt.get_instrs(scope)
+        instrs.append({"label" : endif_label})
+        return instrs
+
 class AssignStmt(Stmt):
 
     def __init__(self, dest, expr):
@@ -295,7 +313,7 @@ class BinOpExpr(Expr):
         self.right = right
 
     def __repr__(self):
-        return f"UnOpExpr(op={self.op}, left={self.left}, right={self.right})"
+        return f"BinOpExpr(op={self.op}, left={self.left}, right={self.right})"
 
     @staticmethod
     def traverse(node, scope, instrs, stack):
