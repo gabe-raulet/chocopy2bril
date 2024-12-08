@@ -46,6 +46,10 @@ class Parser(object):
     def match_dedent(self):
         self.match("DEDENT")
 
+    def match_keyword(self, word):
+        assert self.matches_keyword(word)
+        self.match(Token.KEYWORD)
+
     def matches_newline(self):
         return self.not_done() and self.token().matches("NEWLINE")
 
@@ -84,7 +88,7 @@ class Parser(object):
 
     def get_func_def(self):
         assert self.matches_func_def()
-        self.match(Token.KEYWORD)
+        self.match_keyword("def")
         name = self.match(Token.ID).value
         self.match(Token.LPAREN)
         params = []
@@ -136,6 +140,14 @@ class Parser(object):
             self.error()
 
     def get_stmt(self):
+        if self.matches_if_stmt():
+            return self.get_if_stmt()
+        else:
+            stmt = self.get_simple_stmt()
+            self.match_newline()
+            return stmt
+
+    def get_simple_stmt(self):
         stmt = None
         if self.matches_pass_stmt():
             stmt = self.get_pass_stmt()
@@ -147,7 +159,6 @@ class Parser(object):
             stmt = self.get_assign_stmt()
         else:
             stmt = self.get_expr_stmt()
-        self.match_newline()
         return stmt
 
     def get_stmts(self):
@@ -165,15 +176,39 @@ class Parser(object):
 
     def get_pass_stmt(self):
         assert self.matches_pass_stmt()
-        self.match(Token.KEYWORD)
+        self.match_keyword("pass")
         return PassStmt()
+
+    def get_block(self):
+        self.match_newline()
+        self.match_indent()
+        stmts = [self.get_stmt()]
+        while not self.matches_dedent():
+            stmts.append(self.get_stmt())
+        self.match_dedent()
+        return stmts
+
+    def matches_if_stmt(self):
+        return self.matches_keyword("if")
+
+    def get_if_stmt(self):
+        self.match_keyword("if")
+        if_cond = self.get_expr()
+        self.match(Token.COLON)
+        if_block = self.get_block()
+        else_block = None
+        if self.not_done() and self.matches_keyword("else"):
+            self.match_keyword("else")
+            self.match(Token.COLON)
+            else_block = self.get_block()
+        return IfStmt(if_cond, if_block, else_block)
 
     def matches_print_stmt(self):
         return self.matches_keyword("print")
 
     def get_print_stmt(self):
         assert self.matches_print_stmt()
-        self.match(Token.KEYWORD)
+        self.match_keyword("print")
         self.match(Token.LPAREN)
         expr = self.get_expr()
         self.match(Token.RPAREN)
@@ -184,7 +219,7 @@ class Parser(object):
 
     def get_return_stmt(self):
         assert self.matches_return_stmt()
-        self.match(Token.KEYWORD)
+        self.match_keyword("return")
         expr = self.get_expr()
         return ReturnStmt(expr)
 
@@ -263,31 +298,27 @@ class Parser(object):
             lhs = BinOpExpr(op=op, left=lhs, right=self.get_expr(prec+1))
         return lhs
 
-    def get_program(self):
-        var_defs, func_defs, = [], []
+    def get_decls(self):
+        var_defs, func_defs = [], []
         while self.matches_var_def() or self.matches_func_def():
             if self.matches_var_def():
                 var_defs.append(self.get_var_def())
             else:
                 func_defs.append(self.get_func_def())
+        return var_defs, func_defs
+
+    def get_program(self):
+        var_defs, func_defs = self.get_decls()
         stmts = self.get_stmts()
         return Program(var_defs, func_defs, stmts)
 
-#  def get_pretty_json_str(d):
-    #  json = pprint.pformat(d, compact=True)
-    #  json = json.replace("'", '"').replace("False", "false").replace("True", "true").replace("None", "null")
-    #  return json
+#  if __name__ == "__main__":
+    #  tokens = list(lex_text(sys.stdin.read()))
+    #  parser = Parser(tokens)
+    #  program = parser.get_program()
+    #  json.dump(program.get_bril(), sys.stdout, indent=4)
 
-if __name__ == "__main__":
-    tokens = list(lex_text(sys.stdin.read()))
-    parser = Parser(tokens)
-    program = parser.get_program()
-    json.dump(program.get_bril(), sys.stdout, indent=4)
-
-    #  sys.stdout.write(get_pretty_json_str(program.get_bril()))
-    #  sys.stdout.flush()
-
-#  tokens = list(lex_text(open("prog.py").read()))
-#  parser = Parser(tokens)
-#  program = parser.get_program()
-#  json.dump(program.get_bril(), sys.stdout, indent=4)
+tokens = list(lex_text(open("ifstmt.py").read()))
+parser = Parser(tokens)
+program = parser.get_program()
+json.dump(program.get_bril(), sys.stdout, indent=4)

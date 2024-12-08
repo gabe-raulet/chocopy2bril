@@ -167,6 +167,16 @@ class ReturnStmt(Stmt):
         instrs.append({"op" : "ret", "args" : [arg]})
         return instrs
 
+class IfStmt(Stmt):
+
+    def __init__(self, if_cond, if_block, else_block):
+        self.if_cond = if_cond
+        self.if_block = if_block
+        self.else_block = else_block
+
+    def __repr__(self):
+        return f"IfStmt(if_cond={self.if_cond}, if_block={self.if_block}, else_block={self.else_block})"
+
 class AssignStmt(Stmt):
 
     def __init__(self, dest, expr):
