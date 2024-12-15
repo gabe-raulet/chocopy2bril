@@ -1,0 +1,31 @@
+@catalan(n: int): int {
+    zero: int = const 0;
+    one: int = const 1;
+    i: int = const 0;
+    c: int = const 1;
+    r0: bool = eq n zero;
+    r1: bool = eq n one;
+    r2: bool = or r0 r1;
+    br r2 .done .body;
+.body:
+    c: int = const 0;
+.header:
+    r3: bool = lt i n;
+    br r3 .loop .done;
+.loop:
+    r4: int = call @catalan i;
+    r5: int = sub n i;
+    r6: int = sub r5 one;
+    r7: int = call @catalan r6;
+    r8: int = mul r4 r7;
+    c: int = add c r8;
+    i: int = add i one;
+    jmp .header;
+.done:
+    ret c;
+}
+
+@main(n: int) {
+    r0: int = call @catalan n;
+    print r0;
+}

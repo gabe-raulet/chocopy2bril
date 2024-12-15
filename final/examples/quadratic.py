@@ -34,7 +34,7 @@ def main(a: int, b: int, c: int):
 
 #  quadratic(1, -4, -21) -> (7, -3)
 #  quadratic(1 -4, 4) -> (2, 2)
-#  quadratic(3, 3, -6)
+#  quadratic(3, 3, -6) -> (1, -2)
 
 import sys
 main(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))

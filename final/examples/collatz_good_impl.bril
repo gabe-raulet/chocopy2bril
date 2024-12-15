@@ -1,0 +1,36 @@
+@mod(a: int, b: int): int {
+    r0: int = div a b;
+    r1: int = mul r0 b;
+    r2: int = sub a r1;
+    ret r2;
+}
+
+@collatz(n: int) {
+    zero: ont = const 0;
+    one: int = const 1;
+    two: int = const 2;
+    three: int = const 3;
+.header:
+    cond: bool = eq n one;
+    br cond .exit .loop;
+.loop:
+    print n;
+    r0: int = div n two;
+    r0: int = mul r0 two;
+    r0: int = sub n r0;
+    r1: bool = eq r0 zero;
+    br r1 .if .else;
+.if:
+    n: int = div n two;
+    jmp .header;
+.else:
+    n: int = mul three n;
+    n: int = add n one;
+    jmp .header;
+.exit:
+    print n;
+}
+
+@main(n: int) {
+    call @collatz n;
+}

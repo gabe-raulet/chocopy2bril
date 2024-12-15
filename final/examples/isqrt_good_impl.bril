@@ -1,0 +1,173 @@
+@isqrt1(y: int): int {
+    L: int = const 0;
+    one: int = const 1;
+.header:
+    r0: int = add L one;
+    r1: int = mul r0 r0;
+    cond: bool = le r1 y;
+    br cond .loop .exit;
+.loop:
+    L: int = add L one;
+    jmp .header;
+.exit:
+    ret L;
+}
+
+@isqrt2(y: int): int {
+    one: int = const 1;
+    R: int = id y;
+.header:
+    r0: int = mul R R;
+    cond: bool = gt r0 y;
+    br cond .loop .exit;
+.loop:
+    R: int = sub R one;
+    jmp .header;
+.exit:
+    ret R;
+}
+
+@isqrt3(y: int): int {
+    one: int = const 1;
+    two: int = const 2;
+    L: int = const 0;
+    a: int = const 1;
+    d: int = const 3;
+.header:
+    cond: bool = le a y;
+    br cond .loop .exit;
+.loop:
+    a: int = add a d;
+    d: int = add d two;
+    L: int = add L one;
+    jmp .header;
+.exit:
+    ret L;
+}
+
+@isqrt4(y: int): int {
+    one: int = const 1;
+    two: int = const 2;
+    L: int = const 0;
+    M: int = const 0;
+    R: int = const 0;
+    R: int = add y one;
+.header:
+    r0: int = sub R one;
+    cond: bool = eq L r0;
+    br cond .exit .loop;
+.loop:
+    r1: int = add L R;
+    M: int = div r1 two;
+    r2: int = mul M M;
+    r3: bool = le r2 y;
+    br r3 .if .else;
+.if:
+    L: int = id M;
+    jmp .header;
+.else:
+    R: int = id M;
+    jmp .header;
+.exit:
+    ret L;
+}
+
+@isqrt5(s: int): int {
+    one: int = const 1;
+    two: int = const 2;
+    cond: bool = le s one;
+    br cond .L1 .L2;
+.L1:
+    ret s;
+.L2:
+    x0: int = div s two;
+    r0: int = div s x0;
+    r1: int = add x0 r0;
+    x1: int = div r1 two;
+.L3:
+    cond: bool = lt x1 x0;
+    br cond .L4 .L5;
+.L4:
+    x0: int = id x1;
+    r2: int = div s x0;
+    r3: int = add x0 r2;
+    x1: int = div r3 two;
+    jmp .L3;
+.L5:
+    ret x0;
+}
+
+@isqrt6(n: int): int {
+    one: int = const 1;
+    two: int = const 2;
+    four: int = const 4;
+    cond: bool = lt n two;
+    br cond .exit .body;
+.body:
+    r0: int = div n four;
+    r1: int = call @isqrt6 r0;
+    small_cand: int = mul r1 two;
+    large_cand: int = add small_cand one;
+    r2: int = mul large_cand large_cand;
+    cond: bool = gt r2 n;
+    br cond .return.small .return.large;
+.return.small:
+    ret small_cand;
+.return.large:
+    ret large_cand;
+.exit:
+    ret n;
+}
+
+@main(y: int, v: int) {
+    one: int = const 1;
+    two: int = const 2;
+    three: int = const 3;
+    four: int = const 4;
+    five: int = const 5;
+    six: int = const 6;
+    cond: bool = eq v one;
+    br cond .body1 .elif1;
+.body1:
+    r: int = call @isqrt1 y;
+    print r;
+    jmp .endif;
+.elif1:
+    cond: bool = eq v two;
+    br cond .body2 .elif2;
+.body2:
+    r: int = call @isqrt2 y;
+    print r;
+    jmp .endif;
+.elif2:
+    cond: bool = eq v three;
+    br cond .body3 .elif3;
+.body3:
+    r: int = call @isqrt3 y;
+    print r;
+    jmp .endif;
+.elif3:
+    cond: bool = eq v four;
+    br cond .body4 .elif4;
+.body4:
+    r: int = call @isqrt4 y;
+    print r;
+    jmp .endif;
+.elif4:
+    cond: bool = eq v five;
+    br cond .body5 .elif5;
+.body5:
+    r: int = call @isqrt5 y;
+    print r;
+    jmp .endif;
+.elif5:
+    cond: bool = eq v six;
+    br cond .body6 .elif6;
+.body6:
+    r: int = call @isqrt6 y;
+    print r;
+    jmp .endif;
+.elif6:
+.endif:
+    ret;
+}
