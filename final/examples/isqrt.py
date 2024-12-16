@@ -97,7 +97,7 @@ def main(y: int, v: int):
     elif v == 6:
         print(isqrt6(y))
 
-#### TMP #####
+#!#
 
 import sys
 main(int(sys.argv[1]), int(sys.argv[2]))

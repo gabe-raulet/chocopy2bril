@@ -1,257 +1,17 @@
-class VarDecls(object):
-
-    def __init__(self, types, inits):
-        self.types = types
-        self.inits = inits
-
-    @classmethod
-    def from_var_defs(cls, var_defs):
-        types, inits = {}, {}
-        for var_def in var_defs:
-            types[var_def.name] = var_def.type
-            inits[var_def.name] = var_def.init
-        return cls(types, inits)
-
-    def __repr__(self):
-        return f"VarDecls(types={self.types}, inits={self.inits})"
-
-    def get_type(self, name):
-        return self.types[name]
-
-    def get_init(self, name):
-        return self.inits[name]
-
-    def add_var(self, name, type):
-        self.types[name] = type
-
-    def get_instrs(self):
-        instrs = []
-        for name, init in self.inits.items():
-            instrs.append({"dest" : name, "op" : "const", "value" : init, "type" : self.types[name]})
-        return instrs
-
-class Scope(object):
-
-    def __init__(self, var_decls, func_defs=[]):
-        self.reg = 0
-        self.label = 1
-        self.types = {}
-        for name in var_decls.types:
-            self.types[name] = var_decls.get_type(name)
-        for func_def in func_defs:
-            if func_def.type:
-                self.types[func_def.name] = func_def.type
-
-    def get_type(self, name):
-        return self.types.get(name)
-
-    def next_reg(self):
-        reg = f"r{self.reg}"
-        self.reg += 1
-        return reg
-
-    def next_label(self):
-        label = f"L{self.label}"
-        self.label += 1
-        return label
-
 class Ast(object):
     pass
 
-class Program(Ast):
-
-    def __init__(self, var_defs, func_defs, body):
-        self.var_decls = VarDecls.from_var_defs(var_defs)
-        self.func_defs = func_defs
-        self.body = body
-
-    def __repr__(self):
-        return f"Program(func_defs={self.func_defs}, body={self.body})"
-
-    def get_main_func(self):
-        instrs = self.var_decls.get_instrs()
-        scope = Scope(self.var_decls, self.func_defs)
-        for stmt in self.body:
-            instrs += stmt.get_instrs(scope)
-        return {"name" : "main", "instrs" : instrs}
-
-    def get_bril(self):
-        funcs = [self.get_main_func()]
-        for func_def in self.func_defs:
-            funcs.append(func_def.get_bril())
-        prog = {"functions" : funcs}
-        return prog
-
 class TypedVar(Ast):
 
-    def __init__(self, name, type):
+    def __init__(self, name: str, type: str):
         self.name = name
         self.type = type
 
     def __repr__(self):
         return f"TypedVar(name={self.name}, type={self.type})"
 
-class VarDef(Ast):
-
-    def __init__(self, typed_var, literal):
-        assert typed_var.type == literal.type
-        self.name = typed_var.name
-        self.type = typed_var.type
-        self.init = literal.value
-
-    def __repr__(self):
-        return f"VarDef(name={self.name}, type={self.type}, init={self.init})"
-
-class FuncDef(Ast):
-
-    def __init__(self, name, body, var_defs, params, type):
-        self.name = name
-        self.body = body
-        self.var_decls = VarDecls.from_var_defs(var_defs)
-        self.type = type
-        self.params = []
-        for param in params:
-            self.params.append(param.name)
-            self.var_decls.add_var(param.name, param.type)
-
-    def __repr__(self):
-        return f"FuncDef(name={self.name}, params={self.params}, type={self.type})"
-
-    def get_bril(self):
-        instrs = self.var_decls.get_instrs()
-        scope = Scope(self.var_decls)
-        for stmt in self.body:
-            instrs += stmt.get_instrs(scope)
-        func = {"name" : self.name, "instrs" : instrs}
-        if self.type: func["type"] = self.type
-        if self.params:
-            args = []
-            for name in self.params:
-                args.append({"name" : name, "type" : self.var_decls.get_type(name)})
-            func["args"] = args
-        return func
-
-class Stmt(Ast):
-    pass
-
-class PassStmt(Stmt):
-
-    def __init__(self):
-        pass
-
-    def __repr__(self):
-        return "PassStmt()"
-
-    def get_instrs(self, scope):
-        return [{"op" : "nop"}]
-
-class PrintStmt(Stmt):
-
-    def __init__(self, expr):
-        self.expr = expr
-
-    def __repr__(self):
-        return f"PrintStmt(expr={self.expr})"
-
-    def get_instrs(self, scope):
-        instrs = self.expr.get_instrs(scope)
-        arg = instrs[-1]["dest"]
-        instrs.append({"op" : "print", "args" : [arg]})
-        return instrs
-
-class ReturnStmt(Stmt):
-
-    def __init__(self, expr):
-        self.expr = expr
-
-    def __repr__(self):
-        return f"ReturnStmt(expr={self.expr})"
-
-    def get_instrs(self, scope):
-        instrs = self.expr.get_instrs(scope)
-        arg = instrs[-1]["dest"]
-        instrs.append({"op" : "ret", "args" : [arg]})
-        return instrs
-
-class IfStmt(Stmt):
-
-    def __init__(self, if_cond, if_block, else_block):
-        self.if_cond = if_cond
-        self.if_block = if_block
-        self.else_block = else_block
-
-    def __repr__(self):
-        return f"IfStmt(if_cond={self.if_cond}, if_block={self.if_block}, else_block={self.else_block})"
-
-    def get_instrs(self, scope):
-        instrs = self.if_cond.get_instrs(scope)
-        cond = instrs[-1]["dest"]
-
-        cond_label = f"{scope.next_label()}.if.cond"
-        else_label = f"{scope.next_label()}.else"
-        endif_label = f"{scope.next_label()}.endif"
-
-        instrs.append({"op" : "br", "labels" : [cond_label, else_label], "args" : [cond]})
-        instrs.append({"label" : cond_label})
-
-        for stmt in self.if_block:
-            instrs += stmt.get_instrs(scope)
-
-        instrs.append({"op" : "jmp", "labels" : [endif_label]})
-
-        instrs.append({"label" : else_label})
-        if self.else_block:
-            for stmt in self.else_block:
-                instrs += stmt.get_instrs(scope)
-
-        instrs.append({"label" : endif_label})
-        return instrs
-
-class AssignStmt(Stmt):
-
-    def __init__(self, dest, expr):
-        self.dest = dest
-        self.expr = expr
-
-    def __repr__(self):
-        return f"AssignStmt(dest={self.dest}, expr={self.expr})"
-
-    def get_instrs(self, scope):
-        instrs = self.expr.get_instrs(scope)
-        arg = instrs[-1]["dest"]
-        type = self.expr.get_type(scope)
-        instrs.append({"op" : "id", "dest" : self.dest, "type" : type, "args" : [arg]})
-        return instrs
-
-class ExprStmt(Stmt):
-
-    def __init__(self, expr):
-        self.expr = expr
-
-    def __repr__(self):
-        return f"ExprStmt(expr={self.expr})"
-
-    def get_instrs(self, scope):
-        return self.expr.get_instrs(scope)
-
 class Expr(Ast):
     pass
-
-class Literal(Expr):
-
-    def __init__(self, value, type):
-        self.value = value
-        self.type = type
-
-    def __repr__(self):
-        return f"Literal(value={self.value}, type={self.type})"
-
-    def get_type(self, scope):
-        return self.type
-
-    def get_instrs(self, scope):
-        dest = scope.next_reg()
-        return [{"dest" : dest, "op" : "const", "type" : self.type, "value" : self.value}]
 
 class IdExpr(Expr):
 
@@ -265,9 +25,8 @@ class IdExpr(Expr):
         return scope.get_type(self.name)
 
     def get_instrs(self, scope):
-        type = self.get_type(scope)
         dest = scope.next_reg()
-        return [{"dest" : dest, "op" : "id", "type" : type, "args" : [self.name]}]
+        return [{"dest" : dest, "op" : "id", "type" : self.get_type(scope), "args" : [self.name]}]
 
 class CallExpr(Expr):
 
@@ -286,36 +45,16 @@ class CallExpr(Expr):
         for arg in self.args:
             instrs += arg.get_instrs(scope)
             args.append(instrs[-1]["dest"])
+
+        instrs.append({"op" : "call", "funcs" : [self.name], "args" : args})
+
         type = self.get_type(scope)
-        dest = scope.next_reg()
-        instrs.append({"dest" : dest, "op" : "call", "type" : type, "funcs" : [self.name], "args" : args})
+        if type:
+            dest = scope.next_reg()
+            instrs[-1]["dest"] = dest
+            instrs[-1]["type"] = type
+
         return instrs
-
-class UnOpExpr(Expr):
-
-    def __init__(self, op, expr):
-        self.op = op
-        self.expr = expr
-
-    def __repr__(self):
-        return f"UnOpExpr(op={self.op}, expr={self.expr})"
-
-    def get_type(self, scope):
-        return self.expr.get_type(scope)
-
-    def get_instrs(self, scope):
-        instrs = self.expr.get_instrs(scope)
-        type = self.get_type(scope)
-        op = self.op.lower()
-        args = [instrs[-1]["dest"]]
-        dest = scope.next_reg()
-        if op == "not":
-            assert type == "bool"
-            instrs.append({"dest" : dest, "op" : "not", "type" : "bool", "args" : args})
-        else:
-            raise Exception()
-        return instrs
-
 
 class BinOpExpr(Expr):
 
@@ -326,6 +65,24 @@ class BinOpExpr(Expr):
 
     def __repr__(self):
         return f"BinOpExpr(op={self.op}, left={self.left}, right={self.right})"
+
+    def get_type(self, scope):
+        lhs = self.left.get_type(scope)
+        rhs = self.right.get_type(scope)
+        if self.op in {"ADD", "SUB", "MUL", "DIV", "MOD"}:
+            assert lhs == "int" and rhs == "int"
+            return "int"
+        elif self.op in {"LT", "GT", "LE", "GE"}:
+            assert lhs == "int" and rhs == "int"
+            return "bool"
+        elif self.op in {"EQ", "NE"}:
+            assert lhs == rhs
+            return "bool"
+        elif self.op in {"AND", "OR"}:
+            assert lhs == "bool" and rhs == "bool"
+            return "bool"
+        else:
+            raise Exception()
 
     @staticmethod
     def traverse(node, scope, instrs, stack):
@@ -370,20 +127,333 @@ class BinOpExpr(Expr):
         BinOpExpr.traverse(self, scope, instrs, stack)
         return instrs
 
+class UnOpExpr(Expr):
+
+    def __init__(self, op, expr):
+        self.op = op
+        self.expr = expr
+
+    def __repr__(self):
+        return f"UnOpExpr(op={self.op}, expr={self.expr})"
+
     def get_type(self, scope):
-        lhs = self.left.get_type(scope)
-        rhs = self.right.get_type(scope)
-        if self.op in {"ADD", "SUB", "MUL", "DIV", "MOD"}:
-            assert lhs == "int" and rhs == "int"
-            return "int"
-        elif self.op in {"LT", "GT", "LE", "GE"}:
-            assert lhs == "int" and rhs == "int"
-            return "bool"
-        elif self.op in {"EQ", "NE"}:
-            assert lhs == rhs
-            return "bool"
-        elif self.op in {"AND", "OR"}:
-            assert lhs == "bool" and rhs == "bool"
-            return "bool"
+        return self.expr.get_type(scope)
+
+    def get_instrs(self, scope):
+        instrs = self.expr.get_instrs(scope)
+        dest = instrs[-1]["dest"]
+        op = self.op.lower()
+        if op == "not":
+            assert self.get_type(scope) == "bool"
+            instrs.append({"op" : self.op.lower(), "dest" : dest, "type" : "bool", "args" : [dest]})
         else:
-            raise Exception()
+            assert op == "sub"
+            tmp = scope.next_reg()
+            instrs.append({"op" : "const", "dest" : tmp, "type" : "int", "value" : -1})
+            instrs.append({"op" : "mul", "dest" : dest, "type" : "int", "args" : [dest, tmp]})
+        return instrs
+
+class Literal(Expr):
+
+    def __init__(self, value: int | bool, type: str):
+        self.value = value
+        self.type = type
+
+    def __repr__(self):
+        return f"Literal(value={self.value}, type={self.type})"
+
+    def get_instrs(self, scope):
+        dest = scope.next_reg()
+        return [{"dest" : dest, "op" : "const", "type" : self.type, "value" : self.value}]
+
+    def get_type(self, scope):
+        return self.type
+
+class Stmt(Ast):
+    pass
+
+class ForStmt(Stmt):
+
+    def __init__(self, iter_name: str, bounds: list[int], block: list[Stmt]):
+        self.iter_name = iter_name
+        self.bounds = bounds
+        self.block = block
+
+    def __repr__(self):
+        return f"ForStmt(iter_name={self.iter_name}, bounds={self.bounds}, block={self.block})"
+
+    def get_instrs(self, scope):
+
+        label = scope.next_label()
+        entry_label = f"entry.{label}"
+        body_label = f"body.{label}"
+        exit_label = f"exit.{label}"
+
+        scope.type_map[self.iter_name] = "int"
+
+        instrs = []
+        term = None
+
+        if len(self.bounds) == 1:
+            instrs.append({"op" : "const", "dest" : self.iter_name, "type" : "int", "value" : 0})
+            term = self.bounds[0]
+        else:
+            instrs.append({"op" : "const", "dest" : self.iter_name, "type" : "int", "value" : self.bounds[0]})
+            term = self.bounds[1]
+
+        term_name = scope.next_reg()
+        instrs.append({"op" : "const", "dest" : term_name, "type" : "int", "value" : term})
+
+        inc_name = scope.next_reg()
+        instrs.append({"op" : "const", "dest" : inc_name, "type" : "int", "value" : 1})
+
+        instrs.append({"label" : entry_label})
+        cond = scope.next_reg()
+        instrs.append({"op" : "lt", "dest" : cond, "type" : "bool", "args" : [self.iter_name, term_name]})
+        instrs.append({"op" : "br", "labels" : [body_label, exit_label], "args" : [cond]})
+
+        instrs.append({"label" : body_label})
+        for stmt in self.block: instrs += stmt.get_instrs(scope)
+        instrs.append({"op" : "add", "dest" : self.iter_name, "type" : "int", "args" : [self.iter_name, inc_name]})
+        instrs.append({"op" : "jmp", "labels" : [entry_label]})
+
+        instrs.append({"label" : exit_label})
+        return instrs
+
+class WhileStmt(Stmt):
+
+    def __init__(self, cond : Expr, block: list[Stmt]):
+        self.cond = cond
+        self.block = block
+
+    def __repr__(self):
+        return f"WhileStmt(cond={self.cond}, block={self.block})"
+
+    def get_instrs(self, scope):
+
+        label = scope.next_label()
+        entry_label = f"entry.{label}"
+        body_label = f"body.{label}"
+        exit_label = f"exit.{label}"
+
+        instrs = [{"label" : entry_label}]
+        instrs += self.cond.get_instrs(scope)
+        cond = instrs[-1]["dest"]
+        instrs.append({"op" : "br", "labels" : [body_label, exit_label], "args" : [cond]})
+
+        instrs.append({"label" : body_label})
+        for stmt in self.block:
+            instrs += stmt.get_instrs(scope)
+
+        instrs.append({"op" : "jmp", "labels" : [entry_label]})
+        instrs.append({"label" : exit_label})
+        return instrs
+
+class IfStmt(Stmt):
+
+    def __init__(self, cond, if_block, elif_blocks, else_block):
+        self.cond = cond
+        self.if_block = if_block
+        self.elif_blocks = elif_blocks
+        self.else_block = else_block
+
+    def __repr__(self):
+        return f"IfStmt(cond={self.cond}, if_block={self.if_block}, elif_blocks={self.elif_blocks}, else_block={self.else_block})"
+
+    def get_instrs(self, scope):
+        label = scope.next_label()
+        then_label = f"then.{label}"
+        else_label = f"else.{label}"
+        endif_label = f"endif.{label}"
+
+        instrs = self.cond.get_instrs(scope)
+        cond = instrs[-1]["dest"]
+
+        instrs.append({"op" : "br", "labels" : [then_label, else_label], "args" : [cond]})
+        instrs.append({"label" : then_label})
+
+        for stmt in self.if_block: instrs += stmt.get_instrs(scope)
+        instrs.append({"op" : "jmp", "labels" : [endif_label]})
+
+        instrs.append({"label" : else_label})
+
+        count = 1
+        for lcond, lblock in self.elif_blocks:
+            instrs += lcond.get_instrs(scope)
+            cond = instrs[-1]["dest"]
+            then_label = f"then.{label}.{count}"
+            else_label = f"else.{label}.{count}"
+            count += 1
+            instrs.append({"op" : "br", "labels" : [then_label, else_label], "args" : [cond]})
+            instrs.append({"label" : then_label})
+            for stmt in lblock: instrs += stmt.get_instrs(scope)
+            instrs.append({"op" : "jmp","labels" : [endif_label]})
+            instrs.append({"label" : else_label})
+
+        if self.else_block:
+            for stmt in self.else_block:
+                instrs += stmt.get_instrs(scope)
+
+        instrs.append({"label" : endif_label})
+        return instrs
+
+class PassStmt(Stmt):
+
+    def __repr__(self):
+        return f"PassStmt()"
+
+class PrintStmt(Stmt):
+
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"PrintStmt(expr={self.expr})"
+
+    def get_instrs(self, scope):
+        instrs = self.expr.get_instrs(scope)
+        arg = instrs[-1]["dest"]
+        instrs.append({"op" : "print", "args" : [arg]})
+        return instrs
+
+class ReturnStmt(Stmt):
+
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"ReturnStmt(expr={self.expr})"
+
+    def get_instrs(self, scope):
+        instrs = self.expr.get_instrs(scope)
+        arg = instrs[-1]["dest"]
+        instrs.append({"op" : "ret", "args" : [arg]})
+        return instrs
+
+class AssignStmt(Stmt):
+
+    def __init__(self, dest, expr):
+        self.dest = dest
+        self.expr = expr
+
+    def __repr__(self):
+        return f"AssignStmt(dest={self.dest}, expr={self.expr})"
+
+    def get_instrs(self, scope):
+        instrs = self.expr.get_instrs(scope)
+        arg = instrs[-1]["dest"]
+        instrs.append({"op" : "id", "dest" : self.dest, "type" : self.expr.get_type(scope), "args" : [arg]})
+        return instrs
+
+class ExprStmt(Stmt):
+
+    def __init__(self, expr):
+        self.expr = expr
+
+    def __repr__(self):
+        return f"ExprStmt(expr={self.expr})"
+
+    def get_instrs(self, scope):
+        return self.expr.get_instrs(scope)
+
+class VarDef(Ast):
+
+    def __init__(self, typed_var: TypedVar, literal: Literal):
+        assert typed_var.type == literal.type
+        self.name = typed_var.name
+        self.type = typed_var.type
+        self.init = literal.value
+
+    def __repr__(self):
+        return f"VarDef(name={self.name}, type={self.type}, init={self.init})"
+
+    def get_instr(self):
+        return {"op" : "const", "dest" : self.name, "type" : self.type, "value" : self.init}
+
+class Scope(object):
+
+    def __init__(self, type_map):
+        self.type_map = type_map
+        self.reg = 1
+        self.label = 1
+
+    def get_type(self, name):
+        return self.type_map.get(name)
+
+    def next_reg(self):
+        reg = f"v{self.reg}"
+        self.reg += 1
+        return reg
+
+    def next_label(self):
+        label = self.label
+        self.label += 1
+        return str(label)
+
+class FuncBody(Ast):
+
+    def __init__(self, var_defs: list[VarDef], stmts: list[Stmt]):
+        self.var_defs = var_defs
+        self.stmts = stmts
+
+    def __repr__(self):
+        return f"FuncBody(var_defs={self.var_defs}, stmts={self.stmts})"
+
+    def get_instrs(self, params, body, func_types):
+
+        type_map = {}
+        instrs = []
+
+        for typed_def in params:
+            type_map[typed_def.name] = typed_def.type
+
+        for name, type in func_types.items():
+            type_map[name] = type
+
+        for var_def in self.var_defs:
+            type_map[var_def.name] = var_def.type
+            instrs.append(var_def.get_instr())
+
+        scope = Scope(type_map)
+
+        for stmt in self.stmts:
+            instrs += stmt.get_instrs(scope)
+
+        return instrs
+
+class FuncDef(Ast):
+
+    def __init__(self, name: str, params: list[TypedVar], type: str, body: FuncBody):
+        self.name = name
+        self.params = params
+        self.type = type
+        self.body = body
+
+    def __repr__(self):
+        return f"FuncDef(name={self.name}, params={self.params}, type={self.type})"
+
+    def get_instrs(self, func_types):
+        instrs = self.body.get_instrs(self.params, self.body, func_types)
+        return instrs
+
+    def get_bril(self, func_types):
+        func = {"name" : self.name, "instrs" : self.get_instrs(func_types)}
+        if self.type: func["type"] = self.type
+        if self.params:
+            args = []
+            for typed_var in self.params:
+                args.append({"name" : typed_var.name, "type" : typed_var.type})
+            func["args"] = args
+        return func
+
+class Program(Ast):
+
+    def __init__(self, func_defs: list[FuncDef]):
+        self.func_defs = func_defs
+
+    def __repr__(self):
+        return f"Program(func_defs={self.func_defs})"
+
+    def get_bril(self):
+        func_types = {func_def.name : func_def.type for func_def in self.func_defs}
+        return {"functions" : [func_def.get_bril(func_types) for func_def in self.func_defs]}

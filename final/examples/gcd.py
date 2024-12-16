@@ -96,7 +96,7 @@ def main(a: int, b: int, v: int):
     elif v == 5:
         print(gcd5(a, b))
 
-#### TMP #####
+#!#
 
 import sys
 main(int(sys.argv[1]), int(sys.argv[2]), int(sys.argv[3]))

@@ -16,7 +16,7 @@ def relative_primes(a: int):
 def main(a: int):
     relative_primes(a)
 
-#### TMP #####
+#!#
 
 import sys
 main(int(sys.argv[1]))

@@ -71,15 +71,12 @@ class Token(object):
     ARROW  = TokenPattern.exact("ARROW", "->")
     COMMA  = TokenPattern.exact("COMMA", ",")
 
-    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|def|return|None|pass|if|else")
+    KEYWORD = TokenPattern.regexp("KEYWORD", r"print|def|return|None|pass|if|elif|else|while|for|in|range")
     TYPE    = TokenPattern.regexp("TYPE", r"int|bool")
     BOOL    = TokenPattern.regexp("BOOL", r"True|False", process=lambda v: {"True" : True, "False" : False}[v])
 
     ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
-
-    #  GROUP1 = [EQ, NE, LE, GE, ARROW]
-    #  GROUP2 = [LT, GT, ADD, SUB, MUL, DIV, MOD, NOT, AND, OR, LPAREN, RPAREN, COLON, ASSIGN, COMMA]
 
     LEXEMES_GROUP = [EQ, NE, LE, GE, ARROW, LT, GT, ADD, SUB, MUL, DIV, MOD, NOT, AND, OR, LPAREN, RPAREN, COLON, ASSIGN, COMMA]
     LEXEMES = TokenPattern.group("LEXEMES", LEXEMES_GROUP)
@@ -150,6 +147,7 @@ class Token(object):
 def lex_text(text):
     stack = [0]
     while True:
+        if text.startswith("#!#"): break
         s = re.search(r"[ \t]*(#.*)?\n", text)
         if not s: break
         line = text[:s.start()]

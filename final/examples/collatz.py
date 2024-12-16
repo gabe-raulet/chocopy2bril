@@ -10,7 +10,7 @@ def collatz(n: int):
 def main(n: int):
     collatz(n)
 
-#### TMP #####
+#!#
 
 import sys
 main(int(sys.argv[1]))

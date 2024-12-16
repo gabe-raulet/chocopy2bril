@@ -12,14 +12,14 @@ def catalan(n: int) -> int:
         return c
     c = 0
     while i < n:
-        c += catalan(i) * catalan(n - i - 1)
+        c = c + catalan(i) * catalan(n - i - 1)
         i = i + 1
     return c
 
 def main(n: int):
     print(catalan(n))
 
-#### TMP #####
+#!#
 
 import sys
 main(int(sys.argv[1]))
