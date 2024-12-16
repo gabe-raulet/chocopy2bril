@@ -1,8 +1,0 @@
-@example {
-    r0: int = const 5;
-    print r0;
-}
-
-@main {
-    call @example;
-}

@@ -1,8 +1,0 @@
-var1 = 10
-var2 = var1 + 123
-name_tag = 2 * (122 - var1) + 23
-result = name_tag * var2 + var1 - 51
-answer = 32810
-print result
-difference = result - answer
-print difference
