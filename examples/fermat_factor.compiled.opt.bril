@@ -1,0 +1,81 @@
+@sqrt(s: int): int {
+  x0: int = const 0;
+  x1: int = const 0;
+  v2: int = const 1;
+  v3: bool = le s v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  ret s;
+  jmp .endif.1;
+.else.1:
+.endif.1:
+  v6: int = const 2;
+  v7: int = div s v6;
+  x0: int = id v7;
+  v11: int = div s v7;
+  v12: int = add v7 v11;
+  v13: int = const 2;
+  v14: int = div v12 v13;
+  x1: int = id v14;
+.entry.2:
+  v17: bool = lt x1 x0;
+  br v17 .body.2 .exit.2;
+.body.2:
+  x0: int = id x1;
+  v22: int = div s x1;
+  v23: int = add x1 v22;
+  v24: int = const 2;
+  v25: int = div v23 v24;
+  x1: int = id v25;
+  jmp .entry.2;
+.exit.2:
+  ret x0;
+}
+@is_square(n: int): bool {
+  i: int = const 1;
+.entry.1:
+  v3: int = mul i i;
+  v5: bool = lt v3 n;
+  br v5 .body.1 .exit.1;
+.body.1:
+  v7: int = const 1;
+  v8: int = add i v7;
+  i: int = id v8;
+  jmp .entry.1;
+.exit.1:
+  v11: int = mul i i;
+  v13: bool = eq v11 n;
+  ret v13;
+}
+@fermat_factor(n: int) {
+  lvn.1: int = const 0;
+  v2: int = call @sqrt n;
+  v3: int = const 1;
+  v4: int = add v2 v3;
+  a: int = id v4;
+  v7: int = mul v4 v4;
+  v9: int = sub v7 n;
+  b2: int = id v9;
+.entry.1:
+  lvn.1: bool = call @is_square b2;
+  v11: bool = not lvn.1;
+  br v11 .body.1 .exit.1;
+.body.1:
+  v13: int = const 1;
+  v14: int = add a v13;
+  a: int = id v14;
+  v17: int = mul v14 v14;
+  v19: int = sub v17 n;
+  b2: int = id v19;
+  jmp .entry.1;
+.exit.1:
+  v22: int = call @sqrt b2;
+  v23: int = sub a v22;
+  print v23;
+  v26: int = call @sqrt b2;
+  v27: int = add a v26;
+  print v27;
+}
+@main(n: int) {
+  call @fermat_factor n;
+}

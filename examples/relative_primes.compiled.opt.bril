@@ -1,0 +1,44 @@
+@gcd(a: int, b: int): int {
+.entry.1:
+  lvn.2: bool = eq a b;
+  v3: bool = not lvn.2;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v6: bool = gt a b;
+  br v6 .then.2 .else.2;
+.then.2:
+  v9: int = sub a b;
+  a: int = id v9;
+  jmp .endif.2;
+.else.2:
+  v12: int = sub b a;
+  b: int = id v12;
+.endif.2:
+  jmp .entry.1;
+.exit.1:
+  ret a;
+}
+@relative_primes(a: int) {
+  n: int = const 1;
+.entry.1:
+  v3: bool = le n a;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v6: int = call @gcd n a;
+  v7: int = const 1;
+  v8: bool = eq v6 v7;
+  br v8 .then.2 .else.2;
+.then.2:
+  print n;
+  jmp .endif.2;
+.else.2:
+.endif.2:
+  v11: int = const 1;
+  v12: int = add n v11;
+  n: int = id v12;
+  jmp .entry.1;
+.exit.1:
+}
+@main(a: int) {
+  call @relative_primes a;
+}

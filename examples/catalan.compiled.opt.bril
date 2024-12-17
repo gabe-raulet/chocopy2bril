@@ -1,0 +1,38 @@
+@catalan(n: int): int {
+  i: int = const 0;
+  c: int = const 1;
+  v2: int = const 0;
+  v3: bool = eq n v2;
+  v5: int = const 1;
+  v6: bool = eq n v5;
+  v7: bool = or v3 v6;
+  br v7 .then.1 .else.1;
+.then.1:
+  ret c;
+  jmp .endif.1;
+.else.1:
+.endif.1:
+  c: int = const 0;
+.entry.2:
+  v12: bool = lt i n;
+  br v12 .body.2 .exit.2;
+.body.2:
+  v15: int = call @catalan i;
+  v18: int = sub n i;
+  v19: int = const 1;
+  v20: int = sub v18 v19;
+  v21: int = call @catalan v20;
+  v22: int = mul v15 v21;
+  v23: int = add c v22;
+  c: int = id v23;
+  v25: int = const 1;
+  v26: int = add i v25;
+  i: int = id v26;
+  jmp .entry.2;
+.exit.2:
+  ret c;
+}
+@main(n: int) {
+  v2: int = call @catalan n;
+  print v2;
+}

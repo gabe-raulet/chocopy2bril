@@ -1,0 +1,71 @@
+@get_prime(n: int): int {
+  candidate: int = const 2;
+  found: int = const 0;
+.entry.1:
+  v1: bool = const true;
+  br v1 .body.1 .exit.1;
+.body.1:
+  v3: bool = call @is_prime candidate;
+  br v3 .then.2 .else.2;
+.then.2:
+  v5: int = const 1;
+  v6: int = add found v5;
+  found: int = id v6;
+  v9: bool = eq v6 n;
+  br v9 .then.3 .else.3;
+.then.3:
+  ret candidate;
+  jmp .endif.3;
+.else.3:
+.endif.3:
+  jmp .endif.2;
+.else.2:
+.endif.2:
+  v12: int = const 1;
+  v13: int = add candidate v12;
+  candidate: int = id v13;
+  jmp .entry.1;
+.exit.1:
+  v14: int = const 0;
+  ret v14;
+}
+@is_prime(x: int): bool {
+  div: int = const 2;
+.entry.1:
+  v3: bool = lt div x;
+  br v3 .body.1 .exit.1;
+.body.1:
+  lvn.2: int = div x div;
+  lvn.3: int = mul lvn.2 div;
+  v6: int = sub x lvn.3;
+  v7: int = const 0;
+  v8: bool = eq v6 v7;
+  br v8 .then.2 .else.2;
+.then.2:
+  v9: bool = const false;
+  ret v9;
+  jmp .endif.2;
+.else.2:
+.endif.2:
+  v11: int = const 1;
+  v12: int = add div v11;
+  div: int = id v12;
+  jmp .entry.1;
+.exit.1:
+  v13: bool = const true;
+  ret v13;
+}
+@main(n: int) {
+  i: int = const 1;
+.entry.1:
+  v3: bool = le i n;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v5: int = call @get_prime i;
+  print v5;
+  v7: int = const 1;
+  v8: int = add i v7;
+  i: int = id v8;
+  jmp .entry.1;
+.exit.1:
+}
