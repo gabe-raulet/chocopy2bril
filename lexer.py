@@ -116,28 +116,35 @@ class Token(object):
 
         text = text.lstrip()
 
+        # start by checking if we match the basic terminals (ORDER MATTERS):
+        # ==, !=, <=, >=, ->, <, >, +, -, *, //, %, not, and, or, (, ), :, =, ,
         if cls.LEXEMES.match(text):
             for op in cls.LEXEMES_GROUP:
                 if op.match(text):
                     value, text = op.lex_and_split(text)
                     return Token(op.name, value), text
 
+        # check for "True" or "False"
         if cls.BOOL.match(text):
             value, text = cls.BOOL.lex_and_split(text)
             return Token(cls.BOOL.name, value), text
 
+        # check for "int" or "bool"
         if cls.TYPE.match(text):
             value, text = cls.TYPE.lex_and_split(text)
             return Token(cls.TYPE.name, value), text
 
+        # check for keywords
         if cls.KEYWORD.match(text):
             value, text = cls.KEYWORD.lex_and_split(text)
             return Token(cls.KEYWORD.name, value), text
 
+        # check for identifiers: [a-zA-Z_][a-zA-Z_0-9]*
         if cls.ID.match(text):
             value, text = cls.ID.lex_and_split(text)
             return Token(cls.ID.name, value), text
 
+        # check for numbers: [0-9]+
         if cls.NUM.match(text):
             value, text = cls.NUM.lex_and_split(text)
             return Token(cls.NUM.name, value), text
@@ -145,30 +152,51 @@ class Token(object):
         return None
 
 def lex_text(text):
-    stack = [0]
+
+    stack = [0] # indentation level stack
+
+    # each iteration is for a new program line
     while True:
-        if text.startswith("#!#"): break
+
+        if text.startswith("#!#"):
+            break # skip code after #!# appears
+
+        # find the first ignorable character on current line
         s = re.search(r"[ \t]*(#.*)?\n", text)
-        if not s: break
-        line = text[:s.start()]
-        text = text[s.end():]
-        if not line: continue
+
+        if not s:
+            break # nothing left, we're done
+
+        line = text[:s.start()] # line of interest
+        text = text[s.end():] # remaining text
+
+        if not line:
+            continue # empty line, go to next one
+
+        # match leading whitespace
         front = re.match(r"[ ]*", line)
         l = len(front.group())
+
         if l > stack[-1]:
-            stack.append(l)
+            stack.append(l) # more whitespace than last line means we are indenting
             yield Token("INDENT")
-        elif l < stack[-1]:
+        elif l < stack[-1]: # less whitespace than last line means we are dedenting
             while l < stack[-1]:
                 stack.pop()
                 yield Token("DEDENT")
             assert l == stack[-1]
+
+        # tokenize the line
         result = Token.match(line)
         while result:
             token, line = result
             yield token
             result = Token.match(line)
+
+        # end of line token
         yield Token("NEWLINE")
+
+    # handle remaining dedents
     while stack and stack[-1] > 0:
         stack.pop()
         yield Token("DEDENT")
