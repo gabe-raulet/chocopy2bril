@@ -1,0 +1,371 @@
+@gcd1(u: int, v: int): int {
+  t: int = const 0;
+  v1: int = id u;
+  v2: int = const 0;
+  v3: bool = eq v1 v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  v4: int = id v;
+  ret v4;
+  jmp .endif.1;
+.else.1:
+  v5: int = id v;
+  v6: int = const 0;
+  v7: bool = eq v5 v6;
+  br v7 .then.1.1 .else.1.1;
+.then.1.1:
+  v8: int = id u;
+  ret v8;
+  jmp .endif.1;
+.else.1.1:
+  v9: int = id u;
+  v10: int = const 2;
+  v11: int = div v9 v10;
+  v11: int = mul v11 v10;
+  v11: int = sub v9 v11;
+  v12: int = const 0;
+  v13: bool = eq v11 v12;
+  v14: int = id v;
+  v15: int = const 2;
+  v16: int = div v14 v15;
+  v16: int = mul v16 v15;
+  v16: int = sub v14 v16;
+  v17: int = const 0;
+  v18: bool = eq v16 v17;
+  v19: bool = and v13 v18;
+  br v19 .then.1.2 .else.1.2;
+.then.1.2:
+  v20: int = const 2;
+  v21: int = id u;
+  v22: int = const 2;
+  v23: int = div v21 v22;
+  v24: int = id v;
+  v25: int = const 2;
+  v26: int = div v24 v25;
+  v27: int = call @gcd1 v23 v26;
+  v28: int = mul v20 v27;
+  ret v28;
+  jmp .endif.1;
+.else.1.2:
+  v29: int = id v;
+  v30: int = const 2;
+  v31: int = div v29 v30;
+  v31: int = mul v31 v30;
+  v31: int = sub v29 v31;
+  v32: int = const 0;
+  v33: bool = eq v31 v32;
+  br v33 .then.1.3 .else.1.3;
+.then.1.3:
+  v34: int = id u;
+  v35: int = id v;
+  v36: int = const 2;
+  v37: int = div v35 v36;
+  v38: int = call @gcd1 v34 v37;
+  ret v38;
+  jmp .endif.1;
+.else.1.3:
+  v39: int = id u;
+  v40: int = id v;
+  v41: bool = gt v39 v40;
+  br v41 .then.2 .else.2;
+.then.2:
+  v42: int = id u;
+  t: int = id v42;
+  v43: int = id v;
+  u: int = id v43;
+  v44: int = id t;
+  v: int = id v44;
+  jmp .endif.2;
+.else.2:
+.endif.2:
+  v45: int = id u;
+  v46: int = id v;
+  v47: int = id u;
+  v48: int = sub v46 v47;
+  v49: int = call @gcd1 v45 v48;
+  ret v49;
+.endif.1:
+}
+@gcd2(u: int, v: int): int {
+  t: int = const 0;
+  k: int = const 1;
+  v1: int = id u;
+  v2: int = const 0;
+  v3: bool = eq v1 v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  v4: int = id v;
+  ret v4;
+  jmp .endif.1;
+.else.1:
+.endif.1:
+  v5: int = id v;
+  v6: int = const 0;
+  v7: bool = eq v5 v6;
+  br v7 .then.2 .else.2;
+.then.2:
+  v8: int = id u;
+  ret v8;
+  jmp .endif.2;
+.else.2:
+.endif.2:
+.entry.3:
+  v9: int = id u;
+  v10: int = const 2;
+  v11: int = div v9 v10;
+  v11: int = mul v11 v10;
+  v11: int = sub v9 v11;
+  v12: int = const 0;
+  v13: bool = eq v11 v12;
+  v14: int = id v;
+  v15: int = const 2;
+  v16: int = div v14 v15;
+  v16: int = mul v16 v15;
+  v16: int = sub v14 v16;
+  v17: int = const 0;
+  v18: bool = eq v16 v17;
+  v19: bool = and v13 v18;
+  br v19 .body.3 .exit.3;
+.body.3:
+  v20: int = id k;
+  v21: int = const 2;
+  v22: int = mul v20 v21;
+  k: int = id v22;
+  v23: int = id u;
+  v24: int = const 2;
+  v25: int = div v23 v24;
+  u: int = id v25;
+  v26: int = id v;
+  v27: int = const 2;
+  v28: int = div v26 v27;
+  v: int = id v28;
+  jmp .entry.3;
+.exit.3:
+.entry.4:
+  v29: int = id u;
+  v30: int = const 0;
+  v31: bool = gt v29 v30;
+  v32: int = id u;
+  v33: int = const 2;
+  v34: int = div v32 v33;
+  v34: int = mul v34 v33;
+  v34: int = sub v32 v34;
+  v35: int = const 0;
+  v36: bool = eq v34 v35;
+  v37: bool = and v31 v36;
+  br v37 .body.4 .exit.4;
+.body.4:
+  v38: int = id u;
+  v39: int = const 2;
+  v40: int = div v38 v39;
+  u: int = id v40;
+  jmp .entry.4;
+.exit.4:
+.entry.5:
+  v41: int = id v;
+  v42: int = const 0;
+  v43: bool = gt v41 v42;
+  v44: int = id v;
+  v45: int = const 2;
+  v46: int = div v44 v45;
+  v46: int = mul v46 v45;
+  v46: int = sub v44 v46;
+  v47: int = const 0;
+  v48: bool = eq v46 v47;
+  v49: bool = and v43 v48;
+  br v49 .body.5 .exit.5;
+.body.5:
+  v50: int = id v;
+  v51: int = const 2;
+  v52: int = div v50 v51;
+  v: int = id v52;
+  jmp .entry.5;
+.exit.5:
+.entry.6:
+  v53: bool = const true;
+  br v53 .body.6 .exit.6;
+.body.6:
+  v54: int = id u;
+  v55: int = id v;
+  v56: bool = gt v54 v55;
+  br v56 .then.7 .else.7;
+.then.7:
+  v57: int = id u;
+  t: int = id v57;
+  v58: int = id v;
+  u: int = id v58;
+  v59: int = id t;
+  v: int = id v59;
+  jmp .endif.7;
+.else.7:
+.endif.7:
+  v60: int = id v;
+  v61: int = id u;
+  v62: int = sub v60 v61;
+  v: int = id v62;
+  v63: int = id v;
+  v64: int = const 0;
+  v65: bool = eq v63 v64;
+  br v65 .then.8 .else.8;
+.then.8:
+  v66: int = id u;
+  v67: int = id k;
+  v68: int = mul v66 v67;
+  ret v68;
+  jmp .endif.8;
+.else.8:
+.endif.8:
+.entry.9:
+  v69: int = id v;
+  v70: int = const 0;
+  v71: bool = gt v69 v70;
+  v72: int = id v;
+  v73: int = const 2;
+  v74: int = div v72 v73;
+  v74: int = mul v74 v73;
+  v74: int = sub v72 v74;
+  v75: int = const 0;
+  v76: bool = eq v74 v75;
+  v77: bool = and v71 v76;
+  br v77 .body.9 .exit.9;
+.body.9:
+  v78: int = id v;
+  v79: int = const 2;
+  v80: int = div v78 v79;
+  v: int = id v80;
+  jmp .entry.9;
+.exit.9:
+  jmp .entry.6;
+.exit.6:
+}
+@gcd3(u: int, v: int): int {
+.entry.1:
+  v1: int = id u;
+  v2: int = id v;
+  v3: bool = eq v1 v2;
+  v3: bool = not v3;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v4: int = id u;
+  v5: int = id v;
+  v6: bool = gt v4 v5;
+  br v6 .then.2 .else.2;
+.then.2:
+  v7: int = id u;
+  v8: int = id v;
+  v9: int = sub v7 v8;
+  u: int = id v9;
+  jmp .endif.2;
+.else.2:
+  v10: int = id v;
+  v11: int = id u;
+  v12: int = sub v10 v11;
+  v: int = id v12;
+.endif.2:
+  jmp .entry.1;
+.exit.1:
+  v13: int = id u;
+  ret v13;
+}
+@gcd4(u: int, v: int): int {
+  v1: int = id v;
+  v2: int = const 0;
+  v3: bool = eq v1 v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  v4: int = id u;
+  ret v4;
+  jmp .endif.1;
+.else.1:
+  v5: int = id v;
+  v6: int = id u;
+  v7: int = id v;
+  v8: int = div v6 v7;
+  v8: int = mul v8 v7;
+  v8: int = sub v6 v8;
+  v9: int = call @gcd4 v5 v8;
+  ret v9;
+.endif.1:
+}
+@gcd5(u: int, v: int): int {
+  t: int = const 0;
+.entry.1:
+  v1: int = id v;
+  v2: int = const 0;
+  v3: bool = eq v1 v2;
+  v3: bool = not v3;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v4: int = id u;
+  t: int = id v4;
+  v5: int = id v;
+  u: int = id v5;
+  v6: int = id t;
+  v7: int = id v;
+  v8: int = div v6 v7;
+  v8: int = mul v8 v7;
+  v8: int = sub v6 v8;
+  v: int = id v8;
+  jmp .entry.1;
+.exit.1:
+  v9: int = id u;
+  ret v9;
+}
+@main(a: int, b: int, v: int) {
+  v1: int = id v;
+  v2: int = const 1;
+  v3: bool = eq v1 v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  v4: int = id a;
+  v5: int = id b;
+  v6: int = call @gcd1 v4 v5;
+  print v6;
+  jmp .endif.1;
+.else.1:
+  v7: int = id v;
+  v8: int = const 2;
+  v9: bool = eq v7 v8;
+  br v9 .then.1.1 .else.1.1;
+.then.1.1:
+  v10: int = id a;
+  v11: int = id b;
+  v12: int = call @gcd2 v10 v11;
+  print v12;
+  jmp .endif.1;
+.else.1.1:
+  v13: int = id v;
+  v14: int = const 3;
+  v15: bool = eq v13 v14;
+  br v15 .then.1.2 .else.1.2;
+.then.1.2:
+  v16: int = id a;
+  v17: int = id b;
+  v18: int = call @gcd3 v16 v17;
+  print v18;
+  jmp .endif.1;
+.else.1.2:
+  v19: int = id v;
+  v20: int = const 4;
+  v21: bool = eq v19 v20;
+  br v21 .then.1.3 .else.1.3;
+.then.1.3:
+  v22: int = id a;
+  v23: int = id b;
+  v24: int = call @gcd4 v22 v23;
+  print v24;
+  jmp .endif.1;
+.else.1.3:
+  v25: int = id v;
+  v26: int = const 5;
+  v27: bool = eq v25 v26;
+  br v27 .then.1.4 .else.1.4;
+.then.1.4:
+  v28: int = id a;
+  v29: int = id b;
+  v30: int = call @gcd5 v28 v29;
+  print v30;
+  jmp .endif.1;
+.else.1.4:
+.endif.1:
+}

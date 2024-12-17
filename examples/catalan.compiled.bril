@@ -1,0 +1,51 @@
+@catalan(n: int): int {
+  i: int = const 0;
+  c: int = const 1;
+  v1: int = id n;
+  v2: int = const 0;
+  v3: bool = eq v1 v2;
+  v4: int = id n;
+  v5: int = const 1;
+  v6: bool = eq v4 v5;
+  v7: bool = or v3 v6;
+  br v7 .then.1 .else.1;
+.then.1:
+  v8: int = id c;
+  ret v8;
+  jmp .endif.1;
+.else.1:
+.endif.1:
+  v9: int = const 0;
+  c: int = id v9;
+.entry.2:
+  v10: int = id i;
+  v11: int = id n;
+  v12: bool = lt v10 v11;
+  br v12 .body.2 .exit.2;
+.body.2:
+  v13: int = id c;
+  v14: int = id i;
+  v15: int = call @catalan v14;
+  v16: int = id n;
+  v17: int = id i;
+  v18: int = sub v16 v17;
+  v19: int = const 1;
+  v20: int = sub v18 v19;
+  v21: int = call @catalan v20;
+  v22: int = mul v15 v21;
+  v23: int = add v13 v22;
+  c: int = id v23;
+  v24: int = id i;
+  v25: int = const 1;
+  v26: int = add v24 v25;
+  i: int = id v26;
+  jmp .entry.2;
+.exit.2:
+  v27: int = id c;
+  ret v27;
+}
+@main(n: int) {
+  v1: int = id n;
+  v2: int = call @catalan v1;
+  print v2;
+}

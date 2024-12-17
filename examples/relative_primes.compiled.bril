@@ -1,0 +1,60 @@
+@gcd(a: int, b: int): int {
+.entry.1:
+  v1: int = id a;
+  v2: int = id b;
+  v3: bool = eq v1 v2;
+  v3: bool = not v3;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v4: int = id a;
+  v5: int = id b;
+  v6: bool = gt v4 v5;
+  br v6 .then.2 .else.2;
+.then.2:
+  v7: int = id a;
+  v8: int = id b;
+  v9: int = sub v7 v8;
+  a: int = id v9;
+  jmp .endif.2;
+.else.2:
+  v10: int = id b;
+  v11: int = id a;
+  v12: int = sub v10 v11;
+  b: int = id v12;
+.endif.2:
+  jmp .entry.1;
+.exit.1:
+  v13: int = id a;
+  ret v13;
+}
+@relative_primes(a: int) {
+  n: int = const 1;
+.entry.1:
+  v1: int = id n;
+  v2: int = id a;
+  v3: bool = le v1 v2;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v4: int = id n;
+  v5: int = id a;
+  v6: int = call @gcd v4 v5;
+  v7: int = const 1;
+  v8: bool = eq v6 v7;
+  br v8 .then.2 .else.2;
+.then.2:
+  v9: int = id n;
+  print v9;
+  jmp .endif.2;
+.else.2:
+.endif.2:
+  v10: int = id n;
+  v11: int = const 1;
+  v12: int = add v10 v11;
+  n: int = id v12;
+  jmp .entry.1;
+.exit.1:
+}
+@main(a: int) {
+  v1: int = id a;
+  call @relative_primes v1;
+}

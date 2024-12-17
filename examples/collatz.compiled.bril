@@ -1,0 +1,41 @@
+@collatz(n: int) {
+.entry.1:
+  v1: int = id n;
+  v2: int = const 1;
+  v3: bool = eq v1 v2;
+  v3: bool = not v3;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v4: int = id n;
+  print v4;
+  v5: int = id n;
+  v6: int = const 2;
+  v7: int = div v5 v6;
+  v7: int = mul v7 v6;
+  v7: int = sub v5 v7;
+  v8: int = const 0;
+  v9: bool = eq v7 v8;
+  br v9 .then.2 .else.2;
+.then.2:
+  v10: int = id n;
+  v11: int = const 2;
+  v12: int = div v10 v11;
+  n: int = id v12;
+  jmp .endif.2;
+.else.2:
+  v13: int = const 3;
+  v14: int = id n;
+  v15: int = mul v13 v14;
+  v16: int = const 1;
+  v17: int = add v15 v16;
+  n: int = id v17;
+.endif.2:
+  jmp .entry.1;
+.exit.1:
+  v18: int = id n;
+  print v18;
+}
+@main(n: int) {
+  v1: int = id n;
+  call @collatz v1;
+}

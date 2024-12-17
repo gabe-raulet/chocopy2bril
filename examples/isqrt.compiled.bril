@@ -1,0 +1,261 @@
+@isqrt1(y: int): int {
+  L: int = const 0;
+.entry.1:
+  v1: int = id L;
+  v2: int = const 1;
+  v3: int = add v1 v2;
+  v4: int = id L;
+  v5: int = const 1;
+  v6: int = add v4 v5;
+  v7: int = mul v3 v6;
+  v8: int = id y;
+  v9: bool = le v7 v8;
+  br v9 .body.1 .exit.1;
+.body.1:
+  v10: int = id L;
+  v11: int = const 1;
+  v12: int = add v10 v11;
+  L: int = id v12;
+  jmp .entry.1;
+.exit.1:
+  v13: int = id L;
+  ret v13;
+}
+@isqrt2(y: int): int {
+  R: int = const 0;
+  v1: int = id y;
+  R: int = id v1;
+.entry.1:
+  v2: int = id R;
+  v3: int = id R;
+  v4: int = mul v2 v3;
+  v5: int = id y;
+  v6: bool = gt v4 v5;
+  br v6 .body.1 .exit.1;
+.body.1:
+  v7: int = id R;
+  v8: int = const 1;
+  v9: int = sub v7 v8;
+  R: int = id v9;
+  jmp .entry.1;
+.exit.1:
+  v10: int = id R;
+  ret v10;
+}
+@isqrt3(y: int): int {
+  L: int = const 0;
+  a: int = const 1;
+  d: int = const 3;
+.entry.1:
+  v1: int = id a;
+  v2: int = id y;
+  v3: bool = le v1 v2;
+  br v3 .body.1 .exit.1;
+.body.1:
+  v4: int = id a;
+  v5: int = id d;
+  v6: int = add v4 v5;
+  a: int = id v6;
+  v7: int = id d;
+  v8: int = const 2;
+  v9: int = add v7 v8;
+  d: int = id v9;
+  v10: int = id L;
+  v11: int = const 1;
+  v12: int = add v10 v11;
+  L: int = id v12;
+  jmp .entry.1;
+.exit.1:
+  v13: int = id L;
+  ret v13;
+}
+@isqrt4(y: int): int {
+  L: int = const 0;
+  M: int = const 0;
+  R: int = const 0;
+  v1: int = id y;
+  v2: int = const 1;
+  v3: int = add v1 v2;
+  R: int = id v3;
+.entry.1:
+  v4: int = id L;
+  v5: int = id R;
+  v6: int = const 1;
+  v7: int = sub v5 v6;
+  v8: bool = eq v4 v7;
+  v8: bool = not v8;
+  br v8 .body.1 .exit.1;
+.body.1:
+  v9: int = id L;
+  v10: int = id R;
+  v11: int = add v9 v10;
+  v12: int = const 2;
+  v13: int = div v11 v12;
+  M: int = id v13;
+  v14: int = id M;
+  v15: int = id M;
+  v16: int = mul v14 v15;
+  v17: int = id y;
+  v18: bool = le v16 v17;
+  br v18 .then.2 .else.2;
+.then.2:
+  v19: int = id M;
+  L: int = id v19;
+  jmp .endif.2;
+.else.2:
+  v20: int = id M;
+  R: int = id v20;
+.endif.2:
+  jmp .entry.1;
+.exit.1:
+  v21: int = id L;
+  ret v21;
+}
+@isqrt5(s: int): int {
+  x0: int = const 0;
+  x1: int = const 0;
+  v1: int = id s;
+  v2: int = const 1;
+  v3: bool = le v1 v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  v4: int = id s;
+  ret v4;
+  jmp .endif.1;
+.else.1:
+.endif.1:
+  v5: int = id s;
+  v6: int = const 2;
+  v7: int = div v5 v6;
+  x0: int = id v7;
+  v8: int = id x0;
+  v9: int = id s;
+  v10: int = id x0;
+  v11: int = div v9 v10;
+  v12: int = add v8 v11;
+  v13: int = const 2;
+  v14: int = div v12 v13;
+  x1: int = id v14;
+.entry.2:
+  v15: int = id x1;
+  v16: int = id x0;
+  v17: bool = lt v15 v16;
+  br v17 .body.2 .exit.2;
+.body.2:
+  v18: int = id x1;
+  x0: int = id v18;
+  v19: int = id x0;
+  v20: int = id s;
+  v21: int = id x0;
+  v22: int = div v20 v21;
+  v23: int = add v19 v22;
+  v24: int = const 2;
+  v25: int = div v23 v24;
+  x1: int = id v25;
+  jmp .entry.2;
+.exit.2:
+  v26: int = id x0;
+  ret v26;
+}
+@isqrt6(n: int): int {
+  small_cand: int = const 0;
+  large_cand: int = const 0;
+  v1: int = id n;
+  v2: int = const 2;
+  v3: bool = lt v1 v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  v4: int = id n;
+  ret v4;
+  jmp .endif.1;
+.else.1:
+.endif.1:
+  v5: int = id n;
+  v6: int = const 4;
+  v7: int = div v5 v6;
+  v8: int = call @isqrt6 v7;
+  v9: int = const 2;
+  v10: int = mul v8 v9;
+  small_cand: int = id v10;
+  v11: int = id small_cand;
+  v12: int = const 1;
+  v13: int = add v11 v12;
+  large_cand: int = id v13;
+  v14: int = id large_cand;
+  v15: int = id large_cand;
+  v16: int = mul v14 v15;
+  v17: int = id n;
+  v18: bool = gt v16 v17;
+  br v18 .then.2 .else.2;
+.then.2:
+  v19: int = id small_cand;
+  ret v19;
+  jmp .endif.2;
+.else.2:
+  v20: int = id large_cand;
+  ret v20;
+.endif.2:
+}
+@main(y: int, v: int) {
+  v1: int = id v;
+  v2: int = const 1;
+  v3: bool = eq v1 v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  v4: int = id y;
+  v5: int = call @isqrt1 v4;
+  print v5;
+  jmp .endif.1;
+.else.1:
+  v6: int = id v;
+  v7: int = const 2;
+  v8: bool = eq v6 v7;
+  br v8 .then.1.1 .else.1.1;
+.then.1.1:
+  v9: int = id y;
+  v10: int = call @isqrt2 v9;
+  print v10;
+  jmp .endif.1;
+.else.1.1:
+  v11: int = id v;
+  v12: int = const 3;
+  v13: bool = eq v11 v12;
+  br v13 .then.1.2 .else.1.2;
+.then.1.2:
+  v14: int = id y;
+  v15: int = call @isqrt3 v14;
+  print v15;
+  jmp .endif.1;
+.else.1.2:
+  v16: int = id v;
+  v17: int = const 4;
+  v18: bool = eq v16 v17;
+  br v18 .then.1.3 .else.1.3;
+.then.1.3:
+  v19: int = id y;
+  v20: int = call @isqrt4 v19;
+  print v20;
+  jmp .endif.1;
+.else.1.3:
+  v21: int = id v;
+  v22: int = const 5;
+  v23: bool = eq v21 v22;
+  br v23 .then.1.4 .else.1.4;
+.then.1.4:
+  v24: int = id y;
+  v25: int = call @isqrt5 v24;
+  print v25;
+  jmp .endif.1;
+.else.1.4:
+  v26: int = id v;
+  v27: int = const 6;
+  v28: bool = eq v26 v27;
+  br v28 .then.1.5 .else.1.5;
+.then.1.5:
+  v29: int = id y;
+  v30: int = call @isqrt6 v29;
+  print v30;
+  jmp .endif.1;
+.else.1.5:
+.endif.1:
+}

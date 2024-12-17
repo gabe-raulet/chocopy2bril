@@ -1,0 +1,87 @@
+@sqrt(s: int): int {
+  x0: int = const 0;
+  x1: int = const 0;
+  v1: int = id s;
+  v2: int = const 1;
+  v3: bool = le v1 v2;
+  br v3 .then.1 .else.1;
+.then.1:
+  v4: int = id s;
+  ret v4;
+  jmp .endif.1;
+.else.1:
+.endif.1:
+  v5: int = id s;
+  v6: int = const 2;
+  v7: int = div v5 v6;
+  x0: int = id v7;
+  v8: int = id x0;
+  v9: int = id s;
+  v10: int = id x0;
+  v11: int = div v9 v10;
+  v12: int = add v8 v11;
+  v13: int = const 2;
+  v14: int = div v12 v13;
+  x1: int = id v14;
+.entry.2:
+  v15: int = id x1;
+  v16: int = id x0;
+  v17: bool = lt v15 v16;
+  br v17 .body.2 .exit.2;
+.body.2:
+  v18: int = id x1;
+  x0: int = id v18;
+  v19: int = id x0;
+  v20: int = id s;
+  v21: int = id x0;
+  v22: int = div v20 v21;
+  v23: int = add v19 v22;
+  v24: int = const 2;
+  v25: int = div v23 v24;
+  x1: int = id v25;
+  jmp .entry.2;
+.exit.2:
+  v26: int = id x0;
+  ret v26;
+}
+@quadratic(a: int, b: int, c: int) {
+  Y: int = const 0;
+  X: int = const 0;
+  v1: int = id b;
+  v2: int = id b;
+  v3: int = mul v1 v2;
+  v4: int = const 4;
+  v5: int = id a;
+  v6: int = mul v4 v5;
+  v7: int = id c;
+  v8: int = mul v6 v7;
+  v9: int = sub v3 v8;
+  v10: int = call @sqrt v9;
+  Y: int = id v10;
+  v11: int = id b;
+  v12: int = const -1;
+  v11: int = mul v11 v12;
+  X: int = id v11;
+  v13: int = id X;
+  v14: int = id Y;
+  v15: int = add v13 v14;
+  v16: int = const 2;
+  v17: int = id a;
+  v18: int = mul v16 v17;
+  v19: int = div v15 v18;
+  print v19;
+  v20: int = id X;
+  v21: int = id Y;
+  v22: int = sub v20 v21;
+  v23: int = const 2;
+  v24: int = id a;
+  v25: int = mul v23 v24;
+  v26: int = div v22 v25;
+  print v26;
+}
+@main(a: int, b: int, c: int) {
+  v1: int = id a;
+  v2: int = id b;
+  v3: int = id c;
+  call @quadratic v1 v2 v3;
+}
