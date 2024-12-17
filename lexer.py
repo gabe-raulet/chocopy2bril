@@ -78,12 +78,12 @@ class Token(object):
     ID      = TokenPattern.regexp("ID", r"[a-zA-Z_][a-zA-Z_0-9]*")
     NUM     = TokenPattern.regexp("NUM", r"[0-9]+", process=lambda v: int(v))
 
-    LEXEMES_GROUP = [EQ, NE, LE, GE, ARROW, LT, GT, ADD, SUB, MUL, DIV, MOD, NOT, AND, OR, LPAREN, RPAREN, COLON, ASSIGN, COMMA]
+    LEXEMES_GROUP = [EQ, LE, GE, ARROW, NE, LT, GT, ADD, SUB, MUL, DIV, MOD, NOT, AND, OR, LPAREN, RPAREN, COLON, ASSIGN, COMMA]
     LEXEMES = TokenPattern.group("LEXEMES", LEXEMES_GROUP)
 
     def __init__(self, name, value=None):
-        self.name = name
-        self.value = value
+        self.name = name # token category
+        self.value = value # token value (actual string); NEWLINE, INDENT and DEDENT tokens have value=None
 
     def __repr__(self):
         return f"Token({self.name}, '{self.value}')"
@@ -102,6 +102,10 @@ class Token(object):
         return self.name == other
 
     def matches(self, other):
+        """
+        Returns true if this token "matches" `other` (or any token in `other` if it is a tuple/list).
+        A token "matches" another token if their token "names" are equal.
+        """
         if not isinstance(other, (list, tuple)): other = [other]
         for o in other:
             if self._matches(o):
@@ -111,40 +115,64 @@ class Token(object):
     @classmethod
     def match(cls, text):
 
+        """
+        Given a string `text`, compute the first matching token of the text (if there is one),
+        and return a pair consisting of (1) the matched token and (2) the remainder of `text`
+        after the matched token. If no text remains, or no token can be matched, return None.
+        """
+
         if not text:
             return None
 
         text = text.lstrip()
 
-        # start by checking if we match the basic terminals (ORDER MATTERS):
-        # ==, !=, <=, >=, ->, <, >, +, -, *, //, %, not, and, or, (, ), :, =, ,
+        """
+        Start by checking (in order!) if we match the following "exact match" terminals:
+
+            '==', # check before '='
+            '<=', # check before '<'
+            '>=', # check before '>'
+            '->', # check before '-'
+
+            '!=', '<', '>', '+', '-', '*', '//', '%', 'not', 'and', 'or', '(', ')', ':', '=', ','
+        """
         if cls.LEXEMES.match(text):
             for op in cls.LEXEMES_GROUP:
                 if op.match(text):
                     value, text = op.lex_and_split(text)
                     return Token(op.name, value), text
 
-        # check for "True" or "False"
+        """
+        Check for BOOL terminal: 'True' | 'False'
+        """
         if cls.BOOL.match(text):
             value, text = cls.BOOL.lex_and_split(text)
             return Token(cls.BOOL.name, value), text
 
-        # check for "int" or "bool"
+        """
+        Check for TYPE terminal: 'int' | 'bool'
+        """
         if cls.TYPE.match(text):
             value, text = cls.TYPE.lex_and_split(text)
             return Token(cls.TYPE.name, value), text
 
-        # check for keywords
+        """
+        Check for KEYWORD terminal: 'print' | 'def' | 'return' | 'pass' | 'if' | 'elif' | 'else' | 'while' | 'for' | 'in' | 'range'
+        """
         if cls.KEYWORD.match(text):
             value, text = cls.KEYWORD.lex_and_split(text)
             return Token(cls.KEYWORD.name, value), text
 
-        # check for identifiers: [a-zA-Z_][a-zA-Z_0-9]*
+        """
+        Check for ID terminal: [a-zA-Z_][a-zA-Z_0-9]*
+        """
         if cls.ID.match(text):
             value, text = cls.ID.lex_and_split(text)
             return Token(cls.ID.name, value), text
 
-        # check for numbers: [0-9]+
+        """
+        Check for NUM terminal: [0-9]+
+        """
         if cls.NUM.match(text):
             value, text = cls.NUM.lex_and_split(text)
             return Token(cls.NUM.name, value), text
