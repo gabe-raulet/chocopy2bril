@@ -1,0 +1,16 @@
+    program ::= {func_def}*
+   func_def ::= "def" ID "(" {typed_var {"," typed_var}*}? ")" {"->" type}? ":" NEWLINE INDENT func_body DEDENT
+  func_body ::= {var_def}* stmt+
+  typed_var ::= ID ":" type
+    var_def ::= typed_var "=" literal NEWLINE
+       stmt ::= simple_stmt NEWLINE | "if" expr ":" block {"elif" expr ":" block}* {"else" : block}? | "while" expr ":" block
+simple_stmt ::= "pass" | "expr" | "return" expr | ID "=" expr | "print" "(" expr ")"
+      block ::= NEWLINE INDENT stmt+ DEDENT
+    literal ::= "True" | "False" | NUM
+       expr ::= cexpr | "not" expr | expr {"and" | "or"} expr
+      cexpr ::= ID | literal | "(" expr ")" | ID "(" {expr {"," expr}*}? ")" | cexpr binop cexpr | "-" cexpr
+      binop ::= "+" | "-" | "*" | "//" | "%" | "==" | "!=" | "<=" | ">=" | "<" | ">"
+       type ::= "bool" | "int"
+
+         ID ::= [a-zA-Z_][a-zA-Z_0-9]*
+        NUM ::= [0-9]+
